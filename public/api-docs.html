@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <title>LittleSteps - Documentație API</title>
+    <link rel="stylesheet" href="style.css">
+    <style>
+        .endpoint-card { border-left: 5px solid var(--primary); margin-bottom: 20px; background: #fff; padding: 20px; border-radius: 10px; box-shadow: var(--shadow); }
+        .method { font-weight: 800; padding: 4px 8px; border-radius: 5px; color: #fff; margin-right: 10px; }
+        .get { background: #636e72; }
+        .post { background: #00b894; }
+        .delete { background: #d63031; }
+        code { background: #f1f2f6; padding: 2px 5px; border-radius: 4px; font-family: monospace; }
+        pre { background: #2d3436; color: #fab1a0; padding: 15px; border-radius: 8px; overflow-x: auto; margin-top: 10px; }
+    </style>
+</head>
+<body style="background: var(--bg);">
+    <div class="content" style="max-width: 900px;">
+        <header class="top-bar">
+            <h1>📖 Documentație API REST</h1>
+            <a href="index.html" style="text-decoration: none; color: var(--primary); font-weight: bold;">← Înapoi la App</a>
+        </header>
+
+        <section class="card-container">
+            <h2>Introducere</h2>
+            <p>API-ul <strong>LittleSteps</strong> utilizează arhitectura REST și comunică prin formatul JSON. Autentificarea este gestionată prin sesiuni PHP (Cookies).</p>
+        </section>
+
+        <!-- AUTH -->
+        <h3>🔐 Autentificare</h3>
+        <div class="endpoint-card">
+            <p><span class="method post">POST</span> <code>/api/auth.php?action=register</code></p>
+            <p>Creează un cont nou. Primul utilizator înregistrat primește rolul de <code>admin</code>.</p>
+            <pre>{ "email": "user@test.com", "password": "123", "fullname": "Ion Popescu" }</pre>
+        </div>
+
+        <div class="endpoint-card">
+            <p><span class="method post">POST</span> <code>/api/auth.php?action=login</code></p>
+            <p>Inițializează o sesiune pentru utilizator.</p>
+        </div>
+
+        <!-- ACTIVITATI -->
+        <h3>🍼 Activități (Timeline)</h3>
+        <div class="endpoint-card">
+            <p><span class="method get">GET</span> <code>/api/feeding.php</code></p>
+            <p>Returnează lista tuturor meselor înregistrate pentru utilizatorul curent.</p>
+        </div>
+
+        <div class="endpoint-card">
+            <p><span class="method post">POST</span> <code>/api/sleep.php</code></p>
+            <p>Înregistrează un nou eveniment de somn.</p>
+            <pre>{ "details": "Somn de prânz de 2 ore" }</pre>
+        </div>
+
+        <!-- MEDICAL & MEDIA -->
+        <h3>🏥 Medical & Galerie</h3>
+        <div class="endpoint-card">
+            <p><span class="method post">POST</span> <code>/api/media.php</code></p>
+            <p>Încarcă un fișier multimedia. Necesită <code>multipart/form-data</code>.</p>
+        </div>
+
+        <!-- ADMIN -->
+        <h3>🛡️ Administrare</h3>
+        <div class="endpoint-card">
+            <p><span class="method get">GET</span> <code>/api/admin.php</code></p>
+            <p>Returnează lista tuturor utilizatorilor. <strong>Necesită rol de admin.</strong></p>
+            <p><em>Status Codes:</em> 200 OK, 403 Forbidden.</p>
+        </div>
+
+        <div class="endpoint-card">
+            <p><span class="method delete">DELETE</span> <code>/api/admin.php?id={userId}</code></p>
+            <p>Șterge un utilizator din sistem.</p>
+        </div>
+
+        <!-- EXPORT & RSS -->
+        <h3>📊 Export & RSS</h3>
+        <div class="endpoint-card">
+            <p><span class="method get">GET</span> <code>/api/export.php?format=csv</code></p>
+            <p>Descarcă toate activitățile în format CSV.</p>
+        </div>
+        <div class="endpoint-card">
+            <p><span class="method get">GET</span> <code>/api/rss.php</code></p>
+            <p>Generează un flux XML 2.0 cu ultimele 20 de activități.</p>
+        </div>
+    </div>
+</body>
+</html>
