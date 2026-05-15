@@ -17,9 +17,17 @@
                 <input type="email" id="auth-email" placeholder="Email" required>
                 <input type="password" id="auth-password" placeholder="Parolă" required>
                 <input type="text" id="auth-fullname" placeholder="Nume Complet (doar la înregistrare)">
+                
+                <div id="register-terms-container" style="margin-top: 15px; text-align: left; display: none;">
+                    <label style="font-size: 0.8rem; cursor: pointer; display: flex; align-items: flex-start; gap: 8px; color: var(--text);">
+                        <input type="checkbox" id="auth-terms" style="margin-top: 3px;">
+                        <span>Sunt de acord cu prelucrarea datelor și utilizarea cookie-urilor conform Politicii de Confidențialitate LittleSteps.</span>
+                    </label>
+                </div>
+
                 <div class="auth-buttons">
                     <button type="button" onclick="handleAuth('login')">Conectare</button>
-                    <button type="button" class="btn-alt" onclick="handleAuth('register')">Cont Nou</button>
+                    <button type="button" class="btn-alt" onclick="showRegisterFields()">Cont Nou</button>
                 </div>
             </form>
         </div>
@@ -61,6 +69,17 @@
             </header>
 
             <section id="section-timeline" class="app-section">
+                <div class="card-container" style="margin-bottom: 20px; display: flex; align-items: center; justify-content: space-between; gap: 15px; flex-wrap: wrap;">
+                    <div>
+                        <h3 style="margin-bottom: 5px;">📅 Filtrare Jurnal</h3>
+                        <p style="font-size: 0.85rem; color: var(--text-light); margin: 0;">Selectează o zi pentru a vedea activitățile specifice.</p>
+                    </div>
+                    <div style="display: flex; align-items: center; gap: 10px;">
+                        <input type="date" id="timeline-date-filter" onchange="loadTimeline()" style="padding: 10px; border-radius: 8px; border: 1px solid var(--primary-soft); outline: none;">
+                        <button class="btn-alt" onclick="resetTimelineFilter()" style="padding: 10px 15px;">Toate</button>
+                    </div>
+                </div>
+
                 <div id="activity-list" class="card-container">
                     <p class="placeholder-text">Se încarcă activitățile...</p>
                 </div>

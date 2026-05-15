@@ -724,110 +724,122 @@ function logout() {
 
 /**
  * -----------------------------------------------------------------------------
- * --- TIMELINE INTELIGENT (ALGORITM DE SORTARE) ---
+ * --- TIMELINE INTELIGENT CU FILTRARE CALENDARISTICĂ ---
  * -----------------------------------------------------------------------------
- */
-
-/**
- * Colectează date din 6 surse diferite (API-uri) și le combină cronologic.
- * S-a adăugat sursa de date pentru SCUTECE.
+ * Această funcție este „motorul” aplicației. Colectează date din toate 
+ * sursele API și le organizează cronologic.
+ * Nou: Permite filtrarea în funcție de o dată selectată din calendar.
  */
 async function loadTimeline() {
     if (!selectedChildId) return;
     
     const timelineList = document.getElementById('activity-list');
-    timelineList.innerHTML = '<p class="placeholder-text">Se procesează istoricul activităților...</p>';
+    const dateFilter = document.getElementById('timeline-date-filter').value; // Preluăm data din calendar
+    
+    timelineList.innerHTML = '<p class="placeholder-text">Se procesează fluxul de date pentru data selectată...</p>';
+
+    // Funcție internă de protecție pentru fetch (Bulletproof JSON)
+    const safeFetch = async (url) => {
+        try {
+            const r = await fetch(url);
+            if (!r.ok) return []; 
+            return await r.json();
+        } catch (e) {
+            console.warn(`[Timeline Warning] Nu s-au putut prelua datele: ${url}`);
+            return []; 
+        }
+    };
 
     try {
-        // Lansăm toate cererile în paralel pentru a optimiza timpul de răspuns (Concurrent Fetching)
-        const [fRes, sRes, medRes, mediaRes, evoRes, diaperRes] = await Promise.all([
-            fetch(`api/feeding.php?child_id=${selectedChildId}`),
-            fetch(`api/sleep.php?child_id=${selectedChildId}`),
-            fetch(`api/medical.php?child_id=${selectedChildId}`),
-            fetch(`api/media.php?child_id=${selectedChildId}`),
-            fetch(`api/evolution.php?child_id=${selectedChildId}`),
-            fetch(`api/diaper.php?child_id=${selectedChildId}`) // ADAUGAT: Scutece
+        // Colectăm datele în paralel din cele 6 surse (Parallel Data Aggregation)
+        const [feeding, sleep, medical, media, evolution, diaper] = await Promise.all([
+            safeFetch(`api/feeding.php?child_id=${selectedChildId}`),
+            safeFetch(`api/sleep.php?child_id=${selectedChildId}`),
+            safeFetch(`api/medical.php?child_id=${selectedChildId}`),
+            safeFetch(`api/media.php?child_id=${selectedChildId}`),
+            safeFetch(`api/evolution.php?child_id=${selectedChildId}`),
+            safeFetch(`api/diaper.php?child_id=${selectedChildId}`)
         ]);
 
-        const feedingData = await fRes.json();
-        const sleepData = await sRes.json();
-        const medicalData = await medRes.json();
-        const mediaData = await mediaRes.json();
-        const evolutionData = await evoRes.json();
-        const diaperData = await diaperRes.json(); // ADAUGAT: Scutece
-
-        // Compilăm array-ul unificat
-        let combinedEvents = [
-            ...feedingData.map(f => ({ ...f, icon: '🍼', title: `Hrană: ${f.type}`, date: f.created_at })),
-            ...sleepData.map(s => ({ ...s, icon: '😴', title: 'Somn', date: s.created_at })),
-            ...medicalData.map(m => ({ ...m, icon: '🏥', title: `Medical: ${m.diagnosis}`, date: m.event_date, isDateOnly: true })),
-            ...mediaData.map(i => ({ ...i, icon: '🖼️', title: 'Imagine capturată', date: i.created_at, isMedia: true })),
-            ...diaperData.map(d => ({ ...d, icon: '🧷', title: `Scutec: ${d.type}`, date: d.created_at })), // ADAUGAT
-            ...evolutionData.growth.map(g => ({ 
-                icon: '📏', 
-                title: 'Evoluție: Creștere', 
-                details: `⚖️ ${g.weight}kg | 📏 ${g.height}cm`, 
-                date: g.recorded_date,
-                isDateOnly: true 
-            })),
-            ...evolutionData.milestones.map(m => ({ 
-                icon: '🏆', 
-                title: `Reper: ${m.milestone_name}`, 
-                details: 'Etapă de dezvoltare bifată!', 
-                date: m.milestone_date,
-                isDateOnly: true 
-            }))
+        // Combinăm totul într-un tablou brut (Data Flatting)
+        let rawEvents = [
+            ...feeding.map(f => ({ ...f, icon: '🍼', title: `Hrană: ${f.type}`, date: f.created_at })),
+            ...sleep.map(s => ({ ...s, icon: '😴', title: 'Somn', date: s.created_at })),
+            ...medical.map(m => ({ ...m, icon: '🏥', title: `Medical: ${m.diagnosis}`, date: m.event_date, isDateOnly: true })),
+            ...media.map(i => ({ ...i, icon: '🖼️', title: 'Imagine', date: i.created_at, isMedia: true })),
+            ...diaper.map(d => ({ ...d, icon: '🧷', title: `Scutec: ${d.type}`, date: d.created_at })),
+            ...(evolution.growth || []).map(g => ({ icon: '📏', title: 'Creștere', details: `⚖️ ${g.weight}kg | 📏 ${g.height}cm`, date: g.recorded_date, isDateOnly: true })),
+            ...(evolution.milestones || []).map(m => ({ icon: '🏆', title: `Reper: ${m.milestone_name}`, details: 'Bifat!', date: m.milestone_date, isDateOnly: true }))
         ];
 
-        // --- ALGORITM SORTARE ---
-        combinedEvents.sort((a, b) => {
-            const timestampA = new Date(a.date).getTime();
-            const timestampB = new Date(b.date).getTime();
-            
-            // Ordonare descrescătoare (cel mai nou sus)
-            if (timestampB !== timestampA) {
-                return timestampB - timestampA; 
-            }
-            // Tie-breaker: utilizăm ID-ul pentru evenimente concomitente
+        // --- LOGICĂ FILTRARE CALENDAR ---
+        let filteredEvents = rawEvents;
+        if (dateFilter) {
+            filteredEvents = rawEvents.filter(event => {
+                // Extragem doar partea de YYYY-MM-DD din data evenimentului
+                const eventDate = event.date.split(' ')[0]; 
+                return eventDate === dateFilter;
+            });
+        }
+
+        // --- SORTARE CRONOLOGICĂ (Cel mai nou la început) ---
+        filteredEvents.sort((a, b) => {
+            const timeA = new Date(a.date).getTime();
+            const timeB = new Date(b.date).getTime();
+            if (timeB !== timeA) return timeB - timeA;
             return (b.id || 0) - (a.id || 0);
         });
 
-        if (combinedEvents.length === 0) {
-            timelineList.innerHTML = `<p class="info-text">Nu există nicio activitate înregistrată pentru acest profil.</p>`;
+        // Verificăm dacă avem rezultate după filtrare
+        if (filteredEvents.length === 0) {
+            const msg = dateFilter 
+                ? `Nicio activitate înregistrată pentru data de ${dateFilter}.` 
+                : `Jurnalul este gol. Începe să adaugi activități!`;
+            timelineList.innerHTML = `<p class="info-text" style="text-align:center; padding: 40px;">📭 ${msg}</p>`;
             return;
         }
 
-        // --- RENDERIZARE HTML ---
-        timelineList.innerHTML = combinedEvents.map(item => {
+        // --- RENDERIZARE FINALĂ ---
+        timelineList.innerHTML = filteredEvents.map(item => {
             const dateObj = new Date(item.date);
-            
-            // Formatare în funcție de tipul de eveniment
-            const formattedTime = item.isDateOnly 
-                ? dateObj.toLocaleDateString('ro-RO') 
-                : dateObj.toLocaleString('ro-RO', { 
-                    day: 'numeric', month: 'long', year: 'numeric', 
-                    hour: '2-digit', minute: '2-digit' 
-                  });
+            const displayTime = item.isDateOnly 
+                ? dateObj.toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })
+                : dateObj.toLocaleString('ro-RO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
             return `
-                <div class="item timeline-card">
-                    <div class="item-icon-wrapper">${item.icon}</div>
+                <div class="item timeline-card" style="animation: fadeIn 0.4s ease forwards;">
+                    <div class="item-icon-wrapper" style="font-size: 1.5rem;">${item.icon}</div>
                     <div class="item-content">
-                        <strong>${item.title}</strong>
-                        <p class="details-text">${item.details || item.treatment || item.caption || 'Fără detalii suplimentare'}</p>
-                        ${item.isMedia && item.file_path ? `<img src="${item.file_path}" class="timeline-img">` : ''}
-                        <span class="timestamp-label">📅 ${formattedTime}</span>
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <strong>${item.title}</strong>
+                            <span class="timestamp-label" style="font-size: 0.75rem; background: var(--bg); padding: 2px 8px; border-radius: 10px;">📅 ${displayTime}</span>
+                        </div>
+                        <p class="details-text" style="margin-top: 5px; color: var(--text-light);">${item.details || item.treatment || item.caption || ''}</p>
+                        ${item.isMedia && item.file_path ? `<img src="${item.file_path}" class="timeline-img" style="border-radius: 12px; margin-top: 10px; max-height: 250px; width: auto; max-width: 100%;">` : ''}
                     </div>
                 </div>
             `;
         }).join('');
 
+        console.log(`[Timeline] S-au randat ${filteredEvents.length} evenimente.`);
+
     } catch (error) {
-        console.error("[Timeline] Eroare la procesarea fluxului de date:", error);
-        timelineList.innerHTML = '<p class="error-text">Sistemul de timeline este indisponibil momentan.</p>';
+        console.error("[Critical Error] Timeline Crash:", error);
+        timelineList.innerHTML = '<p class="error-text">Sistemul de jurnalizare întâmpină dificultăți tehnice.</p>';
     }
 }
 
+/**
+ * Resetează filtrul de dată și reîncarcă întreg timeline-ul.
+ */
+function resetTimelineFilter() {
+    const filterInput = document.getElementById('timeline-date-filter');
+    if (filterInput) {
+        filterInput.value = ""; // Resetăm valoarea input-ului
+        loadTimeline(); // Reîncărcăm toate datele
+        console.log("[Timeline Filter] Filtrul a fost resetat la 'Toate'.");
+    }
+}
 
 /**
  * -----------------------------------------------------------------------------
