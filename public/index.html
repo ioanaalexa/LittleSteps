@@ -79,6 +79,16 @@
                     <h3>😴 Somn (Cronometru Real-Time)</h3>
                     <p style="color: var(--text-light); margin-bottom: 15px;">Pornește cronometrul când bebelușul adoarme și oprește-l când se trezește.</p>
                     <button id="sleep-timer-btn" class="btn-sleep" style="width: 100%; padding: 20px; font-size: 1.2rem;" onclick="handleSleepTimer()">😴 Start Somn</button>
+
+                    <hr style="margin: 30px 0; border: 0; border-top: 1px solid #eee;">
+
+                    <h3>🧷 Monitorizare Scutec</h3>
+                    <p style="color: var(--text-light); margin-bottom: 15px;">Înregistrează rapid starea scutecului.</p>
+                    <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                        <button class="btn-alt" style="flex: 1; background: #e3f2fd; color: #1976d2; border: none;" onclick="addDiaper('Umed')">💦 Umed</button>
+                        <button class="btn-alt" style="flex: 1; background: #efebe9; color: #5d4037; border: none;" onclick="addDiaper('Murdar')">💩 Murdar</button>
+                        <button class="btn-alt" style="flex: 1; background: #f3e5f5; color: #7b1fa2; border: none;" onclick="addDiaper('Ambele')">🌟 Ambele</button>
+                    </div>
                 </div>
             </section>
 
