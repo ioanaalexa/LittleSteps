@@ -3,7 +3,7 @@ session_start();
 require_once '../config/db.php';
 require_once 'api_helper.php';
 
-// FIX: Sincronizăm ora cu România
+// Sincronizăm ora cu România
 date_default_timezone_set('Europe/Bucharest');
 
 // Verificăm autentificarea
@@ -29,27 +29,29 @@ if ($method === 'POST') {
     $file = $_FILES['file'];
     $ext = pathinfo($file['name'], PATHINFO_EXTENSION);
     $fileName = time() . '_' . uniqid() . '.' . $ext;
-    $targetPath = "../public/assets/uploads/" . $fileName;
+
+    // MODIFICAT: Calea este acum ../assets/uploads/ pentru că api și assets sunt ambele în public
+    $targetPath = "../assets/uploads/" . $fileName;
 
     // Mutăm fișierul fizic pe server
     if (move_uploaded_file($file['tmp_name'], $targetPath)) {
         
-        // FIX: Generăm data și ora locală
         $ora_actuala = date('Y-m-d H:i:s');
 
-        // Inserăm în DB incluzând manual coloana created_at
+        // Inserăm în DB
         $stmt = $pdo->prepare("INSERT INTO media (child_id, file_path, type, caption, created_at) VALUES (?, ?, ?, ?, ?)");
         $stmt->execute([
             $child_id,
-            'assets/uploads/' . $fileName, 
+            'assets/uploads/' . $fileName, // Calea relativă pentru baza de date
             $file['type'], 
             $_POST['caption'] ?? '',
-            $ora_actuala // Trimitem ora 10:30 (București)
+            $ora_actuala
         ]);
         
         sendResponse(['message' => 'Amintire salvată cu succes!']);
     } else {
-        sendResponse(['error' => 'Eroare la salvarea fișierului pe server.'], 500);
+        // Dacă dă eroarea asta, rulează în terminal: chmod 777 public/assets/uploads
+        sendResponse(['error' => 'Eroare la salvarea fișierului. Verifică permisiunile folderului uploads!'], 500);
     }
 }
 
@@ -63,7 +65,6 @@ if ($method === 'GET') {
         sendResponse(['error' => 'ID-ul copilului lipsește.'], 400);
     }
 
-    // Luăm pozele ordonate după data corectă
     $stmt = $pdo->prepare("SELECT * FROM media WHERE child_id = ? ORDER BY created_at DESC");
     $stmt->execute([$child_id]);
     
