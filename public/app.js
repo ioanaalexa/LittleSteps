@@ -7,11 +7,9 @@ let selectedChildId = null;
  * --- NAVIGARE ȘI UI ---
  */
 function showSection(sectionName) {
-    // Ascundem tot
     document.querySelectorAll('.app-section').forEach(section => section.style.display = 'none');
     document.querySelectorAll('.sidebar li').forEach(li => li.classList.remove('active'));
 
-    // Afișăm secțiunea selectată
     const targetSection = document.getElementById(`section-${sectionName}`);
     const targetMenu = document.getElementById(`menu-${sectionName}`);
     
@@ -23,33 +21,31 @@ function showSection(sectionName) {
         medical: 'Istoric Medical', 
         gallery: 'Galerie Multimedia', 
         family: 'Membrii Familiei',
-        evolution: '📈 Evoluție & Creștere', // Adăugat pentru Evoluție
+        evolution: '📈 Evoluție & Creștere',
         export: 'Export & RSS',
         admin: 'Administrare Sistem'
     };
     document.getElementById('section-title').innerText = titles[sectionName] || 'LittleSteps';
 
-    // Refresh date la schimbarea secțiunii
     if(sectionName === 'timeline') loadTimeline();
     if(sectionName === 'medical') loadMedicalRecords();
     if(sectionName === 'gallery') loadGallery();
     if(sectionName === 'admin') loadAdminData();
     if(sectionName === 'family') loadFamilyData();
-    if(sectionName === 'evolution') loadEvolutionData(); // Adăugat pentru Evoluție
+    if(sectionName === 'evolution') loadEvolutionData();
 }
 
 /**
- * --- GESTIONARE FAMILIE ȘI GEN (👦/👧/👨/👩) ---
+ * --- GESTIONARE FAMILIE ȘI GEN ---
  */
 async function loadFamilyData() {
     const display = document.getElementById('family-list-display');
     const selector = document.getElementById('active-child-select');
     
     try {
-        const response = await fetch('../api/family.php');
+        const response = await fetch('api/family.php'); // MODIFICAT: Cale nouă
         const data = await response.json();
 
-        // 1. Construim lista de membri cu emoji-uri dinamice în funcție de Gen
         let html = '<h4>Părinți și Rude</h4>';
         data.parents.forEach(p => {
             const emoji = (p.gender === 'F') ? '👩' : '👨';
@@ -63,14 +59,12 @@ async function loadFamilyData() {
         });
         if (display) display.innerHTML = html;
 
-        // 2. Populăm selectorul global din Header (doar copiii)
         if (data.children.length > 0) {
             selector.innerHTML = data.children.map(c => {
                 const emoji = (c.gender === 'F') ? '👧' : '👦';
                 return `<option value="${c.id}" ${c.id == selectedChildId ? 'selected' : ''}>${emoji} ${c.name}</option>`;
             }).join('');
             
-            // Dacă e prima încărcare, selectăm primul copil automat
             if (!selectedChildId) {
                 selectedChildId = data.children[0].id;
                 loadTimeline();
@@ -85,11 +79,10 @@ async function loadFamilyData() {
 
 function updateSelectedChild() {
     selectedChildId = document.getElementById('active-child-select').value;
-    // La schimbarea copilului, curățăm și reîncărcăm totul pentru a evita amestecarea datelor
     loadTimeline();
     loadMedicalRecords();
     loadGallery();
-    loadEvolutionData(); // Adăugat pentru refresh la schimbarea copilului
+    loadEvolutionData();
 }
 
 async function saveFamilyMember(type) {
@@ -107,7 +100,7 @@ async function saveFamilyMember(type) {
         if(!payload.email) return alert("Introdu email-ul!");
     }
 
-    const response = await fetch('../api/family.php', {
+    const response = await fetch('api/family.php', { // MODIFICAT: Cale nouă
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -120,48 +113,32 @@ async function saveFamilyMember(type) {
 }
 
 /**
- * --- AUTENTIFICARE ---
+ * --- AUTENTIFICARE (VERSIUNE ROBUSTĂ) ---
  */
 async function handleAuth(action) {
-    console.log("Încercare:", action);
-    
-    // Luăm valorile
-    const emailField = document.getElementById('auth-email');
-    const passwordField = document.getElementById('auth-password');
+    const email = document.getElementById('auth-email').value;
+    const password = document.getElementById('auth-password').value;
     const fullnameField = document.getElementById('auth-fullname');
-
-    if (!emailField || !passwordField) {
-        console.error("ID-urile 'auth-email' sau 'auth-password' lipsesc din HTML!");
-        return;
-    }
-
-    const email = emailField.value;
-    const password = passwordField.value;
     const fullname = fullnameField ? fullnameField.value : "";
 
-    if (!email || !password) {
-        alert("Te rog completează email-ul și parola.");
-        return;
-    }
+    if(!email || !password) return alert("Te rog introdu email și parolă!");
 
     try {
-        const response = await fetch(`../api/auth.php?action=${action}`, {
+        const response = await fetch(`api/auth.php?action=${action}`, { // MODIFICAT: Cale nouă
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ email, password, fullname })
         });
 
-        // Citim răspunsul ca text mai întâi ca să vedem dacă e eroare PHP
         const rawResponse = await response.text();
-        console.log("Răspuns brut server:", rawResponse);
+        console.log("Răspuns server:", rawResponse);
 
         let result;
         try {
             result = JSON.parse(rawResponse);
         } catch (e) {
-            console.error("Serverul nu a trimis JSON:", rawResponse);
-            alert("Eroare de sistem: Serverul a trimis un răspuns invalid. Verifică consola!");
-            return;
+            console.error("Serverul nu a trimis JSON valid:", rawResponse);
+            return alert("Eroare Server: Verifică consola pentru detalii!");
         }
 
         if (response.ok) {
@@ -174,35 +151,36 @@ async function handleAuth(action) {
             alert("Eroare: " + (result.error || "Ceva nu a mers corect."));
         }
     } catch (e) {
-        console.error("Eroare Fetch:", e);
         alert("Eroare de rețea: " + e.message);
     }
 }
 
 function setupUserUI(user) {
     document.getElementById('auth-overlay').style.display = 'none';
-    document.getElementById('display-user').innerText = user.fullname || user.email;
+    const userDisplay = document.getElementById('display-user');
+    if(userDisplay) userDisplay.innerText = user.fullname || user.email;
     
-    // Vizibilitate meniu Admin
     const adminMenu = document.getElementById('menu-admin');
-    adminMenu.style.display = (user.role === 'admin') ? 'block' : 'none';
+    if(adminMenu) adminMenu.style.display = (user.role === 'admin') ? 'block' : 'none';
 
     loadFamilyData();
     loadTimeline();
 }
 
 async function checkLoginStatus() {
-    const res = await fetch('../api/auth.php?action=status');
-    const result = await res.json();
-    if (res.ok && result.logged_in) setupUserUI(result.user);
+    try {
+        const res = await fetch('api/auth.php?action=status'); // MODIFICAT: Cale nouă
+        const result = await res.json();
+        if (res.ok && result.logged_in) setupUserUI(result.user);
+    } catch(e) {}
 }
 
 function logout() {
-    fetch('../api/auth.php?action=logout').then(() => location.reload());
+    fetch('api/auth.php?action=logout').then(() => location.reload()); // MODIFICAT: Cale nouă
 }
 
 /**
- * --- TIMELINE UNIFICAT (REPARAT ORA ȘI EVOLUȚIE) ---
+ * --- TIMELINE UNIFICAT ---
  */
 async function loadTimeline() {
     if (!selectedChildId) return;
@@ -210,13 +188,12 @@ async function loadTimeline() {
     list.innerHTML = '<p class="placeholder-text">Se generează timeline-ul...</p>';
 
     try {
-        // Preluăm și datele de Evoluție
         const [fRes, sRes, medRes, mediaRes, evoRes] = await Promise.all([
-            fetch(`../api/feeding.php?child_id=${selectedChildId}`),
-            fetch(`../api/sleep.php?child_id=${selectedChildId}`),
-            fetch(`../api/medical.php?child_id=${selectedChildId}`),
-            fetch(`../api/media.php?child_id=${selectedChildId}`),
-            fetch(`../api/evolution.php?child_id=${selectedChildId}`)
+            fetch(`api/feeding.php?child_id=${selectedChildId}`), // MODIFICAT: Căi noi
+            fetch(`api/sleep.php?child_id=${selectedChildId}`),
+            fetch(`api/medical.php?child_id=${selectedChildId}`),
+            fetch(`api/media.php?child_id=${selectedChildId}`),
+            fetch(`api/evolution.php?child_id=${selectedChildId}`)
         ]);
 
         const feeding = await fRes.json();
@@ -228,10 +205,8 @@ async function loadTimeline() {
         let allEvents = [
             ...feeding.map(f => ({ ...f, icon: '🍼', title: `Hrană: ${f.type}`, date: f.created_at })),
             ...sleep.map(s => ({ ...s, icon: '😴', title: 'Somn', date: s.created_at })),
-            // FIX: Am scos concatenarea de 00:00:00 și am marcat ca isMedical
             ...medical.map(m => ({ ...m, icon: '🏥', title: `Medical: ${m.diagnosis}`, date: m.event_date, isMedical: true })),
             ...media.map(i => ({ ...i, icon: '🖼️', title: 'Moment capturat', date: i.created_at, isMedia: true })),
-            // ADĂUGAT: Creștere în timeline
             ...evolution.growth.map(g => ({ 
                 icon: '📏', 
                 title: 'Evoluție: Creștere', 
@@ -239,11 +214,10 @@ async function loadTimeline() {
                 date: g.recorded_date,
                 isDateOnly: true 
             })),
-            // ADĂUGAT: Milestones în timeline
             ...evolution.milestones.map(m => ({ 
                 icon: '🏆', 
                 title: `Reper: ${m.milestone_name}`, 
-                details: 'Un moment important în dezvoltare!', 
+                details: 'Un moment important!', 
                 date: m.milestone_date,
                 isDateOnly: true 
             }))
@@ -258,8 +232,6 @@ async function loadTimeline() {
 
         list.innerHTML = allEvents.map(item => {
             const dateObj = new Date(item.date);
-            
-            // FIX ORA: Dacă e Medical sau Evoluție, folosim doar data, altfel dată + oră
             const timeString = (item.isMedical || item.isDateOnly) 
                 ? dateObj.toLocaleDateString('ro-RO') 
                 : dateObj.toLocaleString('ro-RO');
@@ -270,7 +242,7 @@ async function loadTimeline() {
                     <div class="item-content">
                         <strong>${item.title}</strong>
                         <p>${item.details || item.treatment || item.caption || ''}</p>
-                        ${item.isMedia ? `<img src="../public/${item.file_path}" style="max-width:180px; border-radius:10px; margin-top:10px;">` : ''}
+                        ${item.isMedia ? `<img src="${item.file_path}" style="max-width:180px; border-radius:10px; margin-top:10px;">` : ''}
                         <span class="time">📅 ${timeString}</span>
                     </div>
                 </div>
@@ -282,11 +254,11 @@ async function loadTimeline() {
 }
 
 /**
- * --- SALVARE ACTIVITĂȚI (LEGATE DE CHILD_ID) ---
+ * --- SALVARE ACTIVITĂȚI ---
  */
 async function addFeeding(type) {
     if(!selectedChildId) return alert("Selectează un copil!");
-    await fetch('../api/feeding.php', {
+    await fetch('api/feeding.php', { // MODIFICAT: Cale nouă
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ child_id: selectedChildId, type: type, details: 'Masă înregistrată' })
@@ -296,7 +268,7 @@ async function addFeeding(type) {
 
 async function addSleep() {
     if(!selectedChildId) return alert("Selectează un copil!");
-    await fetch('../api/sleep.php', {
+    await fetch('api/sleep.php', { // MODIFICAT: Cale nouă
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ child_id: selectedChildId, details: 'Sesiune de somn' })
@@ -315,7 +287,7 @@ async function addMedicalRecord() {
 
     if(!data.date || !data.diagnosis) return alert("Data și diagnosticul sunt obligatorii!");
 
-    const response = await fetch('../api/medical.php', {
+    const response = await fetch('api/medical.php', { // MODIFICAT: Cale nouă
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
@@ -330,7 +302,7 @@ async function addMedicalRecord() {
 
 async function loadMedicalRecords() {
     const list = document.getElementById('medical-list');
-    const res = await fetch(`../api/medical.php?child_id=${selectedChildId}`);
+    const res = await fetch(`api/medical.php?child_id=${selectedChildId}`); // MODIFICAT: Cale nouă
     const records = await res.json();
     list.innerHTML = records.map(r => `
         <div class="item medical-item">
@@ -352,9 +324,9 @@ async function uploadMedia() {
     const formData = new FormData();
     formData.append('file', fileInput.files[0]);
     formData.append('caption', caption);
-    formData.append('child_id', selectedChildId); // Esențial pentru izolare
+    formData.append('child_id', selectedChildId);
 
-    const response = await fetch('../api/media.php', {
+    const response = await fetch('api/media.php', { // MODIFICAT: Cale nouă
         method: 'POST',
         body: formData
     });
@@ -368,18 +340,18 @@ async function uploadMedia() {
 
 async function loadGallery() {
     const grid = document.getElementById('gallery-grid');
-    const res = await fetch(`../api/media.php?child_id=${selectedChildId}`);
+    const res = await fetch(`api/media.php?child_id=${selectedChildId}`); // MODIFICAT: Cale nouă
     const items = await res.json();
     grid.innerHTML = items.map(item => `
         <div class="gallery-card">
-            <img src="../public/${item.file_path}" alt="Foto">
+            <img src="${item.file_path}" alt="Foto">
             <p>${item.caption || ''}</p>
         </div>
     `).join('') || '<p>Galeria este goală.</p>';
 }
 
 /**
- * --- EVOLUȚIE (CREȘTERE & MILESTONES) ---
+ * --- EVOLUȚIE ---
  */
 async function loadEvolutionData() {
     if (!selectedChildId) return;
@@ -387,7 +359,7 @@ async function loadEvolutionData() {
     const milestonesList = document.getElementById('milestones-list');
 
     try {
-        const response = await fetch(`../api/evolution.php?child_id=${selectedChildId}`);
+        const response = await fetch(`api/evolution.php?child_id=${selectedChildId}`); // MODIFICAT: Cale nouă
         const data = await response.json();
 
         growthList.innerHTML = data.growth.map(g => 
@@ -419,7 +391,7 @@ async function saveEvolution(target) {
         if(!payload.name || !payload.date) return alert("Numele și data sunt obligatorii!");
     }
 
-    const response = await fetch('../api/evolution.php', {
+    const response = await fetch('api/evolution.php', { // MODIFICAT: Cale nouă
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
@@ -428,7 +400,7 @@ async function saveEvolution(target) {
     if (response.ok) {
         alert("Date salvate!");
         loadEvolutionData();
-        loadTimeline(); // Update timeline-ul general dacă e cazul
+        loadTimeline();
     }
 }
 
@@ -437,7 +409,7 @@ async function saveEvolution(target) {
  */
 async function loadAdminData() {
     const list = document.getElementById('admin-user-list');
-    const res = await fetch('../api/admin.php');
+    const res = await fetch('api/admin.php'); // MODIFICAT: Cale nouă
     if (!res.ok) return list.innerHTML = '<tr><td colspan="5">Acces interzis.</td></tr>';
 
     const users = await res.json();
@@ -454,7 +426,7 @@ async function loadAdminData() {
 
 async function deleteUser(id) {
     if (confirm("Sigur ștergi?")) {
-        await fetch(`../api/admin.php?id=${id}`, { method: 'DELETE' });
+        await fetch(`api/admin.php?id=${id}`, { method: 'DELETE' }); // MODIFICAT: Cale nouă
         loadAdminData();
     }
 }
@@ -463,7 +435,7 @@ async function deleteUser(id) {
  * --- EXPORT ---
  */
 function exportData(format) {
-    window.location.href = `../api/export.php?format=${format}&child_id=${selectedChildId}`;
+    window.location.href = `api/export.php?format=${format}&child_id=${selectedChildId}`; // MODIFICAT: Cale nouă
 }
 
 // Start
