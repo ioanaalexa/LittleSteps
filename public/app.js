@@ -2,6 +2,7 @@
  * --- VARIABILE GLOBALE ---
  */
 let selectedChildId = null; 
+let growthChart = null; // Reținem instanța graficului pentru a-l putea actualiza
 
 /**
  * --- UTILITARE: CALCUL VÂRSTĂ EXACTĂ ---
@@ -16,14 +17,12 @@ function getAgeString(birthday) {
     let months = today.getMonth() - birthDate.getMonth();
     let days = today.getDate() - birthDate.getDate();
 
-    // Ajustăm dacă ziua curentă e mai mică decât ziua nașterii
     if (days < 0) {
         months--;
         const lastMonth = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
         days += lastMonth;
     }
 
-    // Ajustăm dacă luna curentă e mai mică decât luna nașterii
     if (months < 0) {
         years--;
         months += 12;
@@ -89,7 +88,7 @@ async function loadFamilyData() {
         html += '<h4 style="margin-top:20px;">Copii</h4>';
         data.children.forEach(c => {
             const emoji = (c.gender === 'F') ? '👧' : '👦';
-            const varstaExacta = getAgeString(c.birthday); // Calculăm vârsta aici
+            const varstaExacta = getAgeString(c.birthday);
 
             html += `
                 <div class="item" style="border-left-color: var(--secondary)">
@@ -392,7 +391,7 @@ async function loadGallery() {
 }
 
 /**
- * --- EVOLUȚIE ---
+ * --- EVOLUȚIE (CU GRAFIC) ---
  */
 async function loadEvolutionData() {
     if (!selectedChildId) return;
@@ -403,6 +402,7 @@ async function loadEvolutionData() {
         const response = await fetch(`api/evolution.php?child_id=${selectedChildId}`);
         const data = await response.json();
 
+        // 1. Populare Liste Text
         growthList.innerHTML = data.growth.map(g => 
             `<div class="item" style="border-left: 4px solid var(--success);">
                 ⚖️ ${g.weight}kg | 📏 ${g.height}cm <br><small>Data: ${g.recorded_date}</small>
@@ -412,6 +412,52 @@ async function loadEvolutionData() {
             `<div class="item" style="border-left: 4px solid var(--warning);">
                 🏆 <strong>${m.milestone_name}</strong> <br><small>Data: ${m.milestone_date}</small>
             </div>`).join('') || '<p>Niciun reper înregistrat.</p>';
+
+        // 2. Generare Grafic Chart.js
+        if (data.growth.length > 0) {
+            const sortedData = [...data.growth].sort((a, b) => new Date(a.recorded_date) - new Date(b.recorded_date));
+            
+            const labels = sortedData.map(g => g.recorded_date);
+            const weights = sortedData.map(g => g.weight);
+            const heights = sortedData.map(g => g.height);
+
+            const ctx = document.getElementById('growthChart').getContext('2d');
+
+            if (growthChart) {
+                growthChart.destroy();
+            }
+
+            growthChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Greutate (kg)',
+                            data: weights,
+                            borderColor: '#ff6b6b',
+                            backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        },
+                        {
+                            label: 'Înălțime (cm)',
+                            data: heights,
+                            borderColor: '#4ecdc4',
+                            backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                            fill: true,
+                            tension: 0.3
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    scales: {
+                        y: { beginAtZero: false }
+                    }
+                }
+            });
+        }
     } catch (e) {
         console.error("Eroare la încărcarea evoluției:", e);
     }
