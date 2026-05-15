@@ -297,3 +297,16 @@ button[onclick*="save"] { background: var(--primary); color: white; }
     color: var(--text);
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
+/* Containerul graficului pentru a preveni mărirea infinită */
+.chart-container {
+    position: relative;
+    height: 300px; /* Fixăm înălțimea la 300px sau cât dorești tu */
+    width: 100%;
+    margin-top: 20px;
+}
+
+#growthChart {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+}

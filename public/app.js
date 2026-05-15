@@ -1089,10 +1089,11 @@ async function loadEvolutionData() {
 
 /**
  * Configurează și randează instanța Chart.js pentru datele de creștere.
+ * FIX: S-au adăugat setări stricte pentru a preveni mărirea infinită a canvas-ului.
  * * @param {Array} rawData - Array de obiecte de măsurare.
  */
 function renderEvolutionChart(rawData) {
-    // Sortăm datele cronologic pentru un grafic corect
+    // Sortăm datele cronologic pentru un grafic corect (de la vechi la nou)
     const sorted = [...rawData].sort((a, b) => new Date(a.recorded_date) - new Date(b.recorded_date));
     
     const labels = sorted.map(d => d.recorded_date);
@@ -1104,11 +1105,12 @@ function renderEvolutionChart(rawData) {
     
     const context = canvas.getContext('2d');
     
-    // Distrugem graficul anterior dacă există (prevenim suprapunerea)
+    // Distrugem graficul anterior dacă există (esențial pentru a preveni ghosting-ul datelor)
     if (growthChart) {
         growthChart.destroy();
     }
     
+    // Crearea instanței noi de grafic
     growthChart = new Chart(context, {
         type: 'line',
         data: {
@@ -1121,7 +1123,8 @@ function renderEvolutionChart(rawData) {
                     backgroundColor: 'rgba(255, 107, 107, 0.15)',
                     borderWidth: 3,
                     fill: true,
-                    tension: 0.35
+                    tension: 0.35,
+                    pointRadius: 4
                 },
                 {
                     label: 'Înălțime (cm)',
@@ -1130,29 +1133,63 @@ function renderEvolutionChart(rawData) {
                     backgroundColor: 'rgba(78, 205, 196, 0.15)',
                     borderWidth: 3,
                     fill: true,
-                    tension: 0.35
+                    tension: 0.35,
+                    pointRadius: 4
                 }
             ]
         },
         options: {
+            // FIX PENTRU RESIZING INFINIT:
             responsive: true,
-            maintainAspectRatio: false,
+            maintainAspectRatio: false, // Forțează graficul să stea în containerul lui CSS
+            resizeDelay: 200, // Amână redesenarea pentru a stabiliza dimensiunile
+            
+            layout: {
+                padding: {
+                    top: 10,
+                    bottom: 10,
+                    left: 5,
+                    right: 5
+                }
+            },
             scales: {
                 y: { 
                     beginAtZero: false,
-                    grid: { color: 'rgba(0,0,0,0.05)' }
+                    grid: { color: 'rgba(0,0,0,0.05)' },
+                    ticks: {
+                        font: { size: 11 }
+                    }
                 },
                 x: {
-                    grid: { display: false }
+                    grid: { display: false },
+                    ticks: {
+                        font: { size: 11 }
+                    }
                 }
             },
             plugins: {
-                legend: { position: 'top' }
+                legend: { 
+                    position: 'top',
+                    labels: {
+                        boxWidth: 12,
+                        padding: 20,
+                        font: { weight: 'bold' }
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(255, 255, 255, 0.9)',
+                    titleColor: '#333',
+                    bodyColor: '#666',
+                    borderColor: '#ddd',
+                    borderWidth: 1,
+                    padding: 10,
+                    displayColors: true
+                }
             }
         }
     });
     
-    console.log("[Chart] Graficul de creștere a fost actualizat.");
+    console.log("[Chart System] Graficul de creștere a fost stabilizat și randat.");
 }
 
 /**
@@ -1190,8 +1227,6 @@ async function saveEvolution(category) {
         console.error("[Evolution Save Error]:", err);
     }
 }
-
-
 /**
  * -----------------------------------------------------------------------------
  * --- PANOU ADMINISTRARE ȘI GESTIONARE UTILIZATORI ---
