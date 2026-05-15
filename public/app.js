@@ -62,6 +62,7 @@ function showSection(sectionName) {
 
     if(sectionName === 'timeline') loadTimeline();
     if(sectionName === 'medical') loadMedicalRecords();
+    if(sectionName === 'vaccines') loadVaccines();
     if(sectionName === 'gallery') loadGallery();
     if(sectionName === 'admin') loadAdminData();
     if(sectionName === 'family') loadFamilyData();
@@ -350,6 +351,41 @@ async function loadMedicalRecords() {
             <p>💊 ${r.treatment || 'Fără tratament'} | 🩺 ${r.doctor || 'N/A'}</p>
         </div>
     `).join('') || '<p>Nicio înregistrare medicală.</p>';
+}
+/**
+ * --- VACCINURI---
+ */
+async function loadVaccines() {
+    if (!selectedChildId) return;
+    const list = document.getElementById('vaccine-list');
+    list.innerHTML = '<p>Se încarcă schema de vaccinare...</p>';
+
+    try {
+        const res = await fetch(`api/vaccines.php?child_id=${selectedChildId}`);
+        const data = await res.json();
+
+        list.innerHTML = data.map(v => `
+            <div class="vaccine-item ${v.status == 1 ? 'completed' : ''}">
+                <div class="v-info">
+                    <strong>${v.name}</strong>
+                    <small>📅 Recomandat la: ${v.age_tag}</small>
+                    ${v.status == 1 ? `<span class="v-date">Efectuat la: ${v.date_administered}</span>` : ''}
+                </div>
+                <button onclick="toggleVaccine(${v.id}, ${v.status == 1 ? 0 : 1})" class="${v.status == 1 ? 'btn-alt' : ''}">
+                    ${v.status == 1 ? '✅ Efectuat' : 'Bifează'}
+                </button>
+            </div>
+        `).join('');
+    } catch (e) { console.error(e); }
+}
+
+async function toggleVaccine(id, newStatus) {
+    await fetch('api/vaccines.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: id, status: newStatus })
+    });
+    loadVaccines();
 }
 
 /**

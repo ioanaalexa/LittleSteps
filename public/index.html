@@ -32,6 +32,7 @@
                 <li id="menu-timeline" class="active" onclick="showSection('timeline')">🏠 Timeline</li>
                 <li id="menu-medical" onclick="showSection('medical')">🏥 Medical</li>
                 <li id="menu-evolution" onclick="showSection('evolution')">📈 Evoluție</li>
+                <li id="menu-vaccines" onclick="showSection('vaccines')">💉 Vaccinuri</li>
                 <li id="menu-gallery" onclick="showSection('gallery')">🖼️ Galerie</li>
                 <li id="menu-family" onclick="showSection('family')">👪 Familie</li>
                 <li id="menu-export" onclick="showSection('export')">📊 Export & RSS</li>
@@ -158,7 +159,14 @@
                     </div>
                 </div>
             </section>
-
+            <section id="section-vaccines" class="app-section" style="display:none;">
+                 <div class="card-container">
+                   <h3>💉 Planificator Vaccinări</h3>
+                    <p style="margin-bottom: 20px; color: var(--text-light);">Urmărește schema de vaccinare recomandată și bifează dozele administrate.</p>
+                    <div id="vaccine-list" class="vaccine-grid">
+                    </div>
+                    </div>
+            </section>
             <section id="section-export" class="app-section" style="display:none;">
                 <div class="card-container export-card">
                     <h3>📊 Rapoarte și Portabilitate</h3>

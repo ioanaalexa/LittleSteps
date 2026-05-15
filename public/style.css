@@ -179,3 +179,26 @@ button[onclick*="save"] { background: var(--primary); color: white; }
     .content { padding: 20px; }
     .family-grid { grid-template-columns: 1fr !important; }
 }
+.vaccine-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px;
+    background: #f8faff;
+    border-radius: 15px;
+    margin-bottom: 12px;
+    border-left: 5px solid var(--primary-light);
+}
+.vaccine-item.completed {
+    background: var(--primary-soft);
+    border-left-color: var(--success);
+    opacity: 0.8;
+}
+.v-info { display: flex; flex-direction: column; }
+.v-info strong { font-size: 1.1rem; color: var(--text); }
+.v-info small { color: var(--text-light); font-weight: 600; }
+.v-date { font-size: 0.8rem; color: var(--success); font-weight: 800; margin-top: 5px; }
+
+.vaccine-item button {
+    min-width: 120px;
+}
