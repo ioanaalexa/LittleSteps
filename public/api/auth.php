@@ -1,8 +1,10 @@
 <?php
-// api/auth.php
 session_start();
 require_once '../config/db.php';
 require_once 'api_helper.php';
+
+// Setăm antetul de JSON pentru toate răspunsurile
+header('Content-Type: application/json');
 
 $method = $_SERVER['REQUEST_METHOD'];
 $action = $_GET['action'] ?? '';
@@ -10,80 +12,105 @@ $action = $_GET['action'] ?? '';
 if ($method === 'POST') {
     $data = getJsonInput();
 
-    // --- ÎNREGISTRARE ---
+    // --- 1. LOGICĂ ÎNREGISTRARE (REGISTER) ---
     if ($action === 'register') {
-        if (empty($data['email']) || empty($data['password'])) {
+        $email = isset($data['email']) ? trim($data['email']) : '';
+        $password = $data['password'] ?? '';
+        $fullname = trim($data['fullname'] ?? '');
+
+        if (empty($email) || empty($password)) {
             sendResponse(['error' => 'Email-ul și parola sunt obligatorii!'], 400);
         }
 
-        $hashedPassword = password_hash($data['password'], PASSWORD_BCRYPT);
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            sendResponse(['error' => 'Formatul email-ului este invalid.'], 400);
+        }
+
+        // Hashing securizat (Algoritm BCRYPT)
+        $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
         
         try {
-            // Verificăm dacă acesta este primul utilizator din sistem. 
-            // Dacă da, îl facem automat ADMIN pentru a avea acces la panou.
-            $checkUsers = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
-            $role = ($checkUsers == 0) ? 'admin' : 'user';
+            // Verificăm dacă este primul utilizator pentru a-i da rol de ADMIN
+            $userCount = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
+            $role = ($userCount == 0) ? 'admin' : 'user';
 
             $stmt = $pdo->prepare("INSERT INTO users (email, password, fullname, role) VALUES (?, ?, ?, ?)");
-            $stmt->execute([
-                $data['email'], 
-                $hashedPassword, 
-                $data['fullname'] ?? '', 
-                $role
-            ]);
+            $stmt->execute([$email, $hashedPassword, $fullname, $role]);
             
-            sendResponse(['message' => 'Cont creat cu succes ca ' . $role . '!'], 201);
+            sendResponse(['message' => "Cont creat cu succes! Te poți loga ca $role."], 201);
         } catch (PDOException $e) {
-            sendResponse(['error' => 'Acest email este deja înregistrat.'], 400);
+            // Eroare 23000 înseamnă de obicei email duplicat (Unique Constraint)
+            sendResponse(['error' => 'Acest email este deja utilizat de un alt părinte.'], 400);
         }
     }
 
-    // --- LOGIN ---
+    // --- 2. LOGICĂ CONECTARE (LOGIN) ---
     if ($action === 'login') {
-        if (empty($data['email']) || empty($data['password'])) {
-            sendResponse(['error' => 'Introduceți email și parola.'], 400);
+        $email = isset($data['email']) ? trim($data['email']) : '';
+        $password = $data['password'] ?? '';
+
+        if (empty($email) || empty($password)) {
+            sendResponse(['error' => 'Te rugăm să introduci email-ul și parola.'], 400);
         }
 
         $stmt = $pdo->prepare("SELECT * FROM users WHERE email = ?");
-        $stmt->execute([$data['email']]);
+        $stmt->execute([$email]);
         $user = $stmt->fetch();
 
-        if ($user && password_verify($data['password'], $user['password'])) {
-            // Salvăm datele esențiale în sesiune
-            $_SESSION['user_id'] = $user['id'];
+        if ($user && password_verify($password, $user['password'])) {
+            
+            // SECURITATE: Regenerăm ID-ul sesiunii pentru a preveni Session Hijacking
+            session_regenerate_id(true);
+
+            // Salvăm informațiile necesare în variabila superglobală $_SESSION
+            $_SESSION['user_id']   = $user['id'];
             $_SESSION['user_email'] = $user['email'];
-            $_SESSION['role'] = $user['role']; // FOARTE IMPORTANT PENTRU ADMIN
+            $_SESSION['fullname']   = $user['fullname'];
+            $_SESSION['role']       = $user['role'];
 
             sendResponse([
-                'message' => 'Login reușit!',
+                'message' => 'Autentificare reușită!',
                 'user' => [
-                    'id' => $user['id'],
-                    'email' => $user['email'],
-                    'role' => $user['role'],
+                    'id'       => $user['id'],
+                    'email'    => $user['email'],
+                    'role'     => $user['role'],
                     'fullname' => $user['fullname']
                 ]
             ]);
         } else {
-            sendResponse(['error' => 'Email sau parolă incorectă.'], 401);
+            sendResponse(['error' => 'Email-ul sau parola sunt incorecte.'], 401);
         }
     }
 }
 
-// --- LOGOUT ---
+// --- 3. LOGICĂ DECONECTARE (LOGOUT) ---
 if ($action === 'logout') {
-    session_unset();
+    // Distrugem toate datele sesiunii
+    $_SESSION = array();
     session_destroy();
-    sendResponse(['message' => 'Te-ai delogat cu succes.']);
+    
+    // Ștergem și cookie-ul de sesiune din browser
+    if (ini_get("session.use_cookies")) {
+        $params = session_get_cookie_params();
+        setcookie(session_name(), '', time() - 42000,
+            $params["path"], $params["domain"],
+            $params["secure"], $params["httponly"]
+        );
+    }
+    
+    sendResponse(['message' => 'Sesiune închisă cu succes.']);
 }
 
-// --- VERIFICARE STATUS (Util pentru refresh pagină) ---
+// --- 4. VERIFICARE STATUS (Pentru refresh-ul paginii în JS) ---
 if ($method === 'GET' && $action === 'status') {
     if (isset($_SESSION['user_id'])) {
         sendResponse([
             'logged_in' => true,
             'user' => [
-                'email' => $_SESSION['user_email'],
-                'role' => $_SESSION['role']
+                'id'       => $_SESSION['user_id'],
+                'email'    => $_SESSION['user_email'],
+                'fullname' => $_SESSION['fullname'] ?? '',
+                'role'     => $_SESSION['role']
             ]
         ]);
     } else {
