@@ -329,7 +329,7 @@ async function loadTimeline() {
         let allEvents = [
             ...feeding.map(f => ({ ...f, icon: '🍼', title: `Hrană: ${f.type}`, date: f.created_at })),
             ...sleep.map(s => ({ ...s, icon: '😴', title: 'Somn', date: s.created_at })),
-            ...medical.map(m => ({ ...m, icon: '🏥', title: `Medical: ${m.diagnosis}`, date: m.event_date, isMedical: true })),
+            ...medical.map(m => ({ ...m, icon: '🏥', title: `Medical: ${m.diagnosis}`, date: m.event_date, isDateOnly: true })),
             ...media.map(i => ({ ...i, icon: '🖼️', title: 'Moment capturat', date: i.created_at, isMedia: true })),
             ...evolution.growth.map(g => ({ 
                 icon: '📏', 
@@ -347,7 +347,18 @@ async function loadTimeline() {
             }))
         ];
 
-        allEvents.sort((a, b) => new Date(b.date) - new Date(a.date));
+        // --- SORTARE REPARATĂ: Data Nouă sus, iar la date egale, ID-ul mai mare sus ---
+        allEvents.sort((a, b) => {
+            const timeA = new Date(a.date).getTime();
+            const timeB = new Date(b.date).getTime();
+            
+            if (timeB !== timeA) {
+                return timeB - timeA; // Sortează după timp (cel mai nou primul)
+            }
+            
+            // Dacă timpul este identic (ex: ambele la 00:00:00), folosim ID-ul ca să apară ultima introdusă sus
+            return (b.id || 0) - (a.id || 0);
+        });
 
         if (allEvents.length === 0) {
             list.innerHTML = `<p>Nicio activitate pentru profilul selectat.</p>`;
@@ -356,9 +367,10 @@ async function loadTimeline() {
 
         list.innerHTML = allEvents.map(item => {
             const dateObj = new Date(item.date);
-            const timeString = (item.isMedical || item.isDateOnly) 
+            // Dacă e Medical/Evoluție, afișăm doar data, altfel afișăm Data + Ora
+            const timeString = item.isDateOnly 
                 ? dateObj.toLocaleDateString('ro-RO') 
-                : dateObj.toLocaleString('ro-RO');
+                : dateObj.toLocaleString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
 
             return `
                 <div class="item">
@@ -366,13 +378,14 @@ async function loadTimeline() {
                     <div class="item-content">
                         <strong>${item.title}</strong>
                         <p>${item.details || item.treatment || item.caption || ''}</p>
-                        ${item.isMedia ? `<img src="${item.file_path}" style="max-width:180px; border-radius:10px; margin-top:10px;">` : ''}
+                        ${item.isMedia && item.file_path ? `<img src="${item.file_path}" style="max-width:180px; border-radius:10px; margin-top:10px;">` : ''}
                         <span class="time">📅 ${timeString}</span>
                     </div>
                 </div>
             `;
         }).join('');
     } catch (e) {
+        console.error("Eroare Timeline:", e);
         list.innerHTML = '<p>Eroare la procesarea timeline-ului.</p>';
     }
 }
