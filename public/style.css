@@ -202,3 +202,34 @@ button[onclick*="save"] { background: var(--primary); color: white; }
 .vaccine-item button {
     min-width: 120px;
 }
+/* Variabile Dark Mode */
+[data-theme="dark"] {
+    --bg: #1a1a2e;
+    --sidebar-bg: #16213e;
+    --white: #16213e;
+    --text: #e9ecef;
+    --text-light: #adb5bd;
+    --shadow: 0 10px 30px rgba(0,0,0,0.3);
+    --primary-soft: rgba(108, 92, 231, 0.2);
+}
+
+/* Stil pentru Buton Somn Activ */
+.btn-sleep.active {
+    background: var(--danger);
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% { box-shadow: 0 0 0 0 rgba(255, 118, 117, 0.4); }
+    70% { box-shadow: 0 0 0 15px rgba(255, 118, 117, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 118, 117, 0); }
+}
+
+/* Dark Mode Toggle Switch */
+.theme-switch {
+    cursor: pointer;
+    font-size: 1.5rem;
+    padding: 10px;
+    border-radius: 50%;
+    background: var(--primary-soft);
+}

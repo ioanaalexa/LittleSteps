@@ -30,6 +30,7 @@
             <div class="logo">👶 LittleSteps</div>
             <ul>
                 <li id="menu-timeline" class="active" onclick="showSection('timeline')">🏠 Timeline</li>
+                <li id="menu-daily" onclick="showSection('daily')">📝 Jurnal Zilnic</li>
                 <li id="menu-medical" onclick="showSection('medical')">🏥 Medical</li>
                 <li id="menu-evolution" onclick="showSection('evolution')">📈 Evoluție</li>
                 <li id="menu-vaccines" onclick="showSection('vaccines')">💉 Vaccinuri</li>
@@ -52,16 +53,31 @@
                         </select>
                     </div>
                 </div>
-                <div class="user-info">Salut, <span id="display-user">Părinte</span>!</div>
+                <div class="user-info">
+                    <span class="theme-switch" onclick="toggleDarkMode()" style="cursor:pointer; margin-right: 15px; font-size: 1.4rem;">🌓</span>
+                    Salut, <span id="display-user">Părinte</span>!
+                </div>
             </header>
 
             <section id="section-timeline" class="app-section">
-                <div class="quick-actions">
-                    <button class="btn-feed" onclick="addFeeding('Biberon')">🍼 Adaugă Masă</button>
-                    <button class="btn-sleep" onclick="addSleep()">😴 Înregistrează Somn</button>
-                </div>
                 <div id="activity-list" class="card-container">
                     <p class="placeholder-text">Se încarcă activitățile...</p>
+                </div>
+            </section>
+
+            <section id="section-daily" class="app-section" style="display:none;">
+                <div class="card-container">
+                    <h3>🍼 Hrănire</h3>
+                    <div style="display: flex; gap: 10px; margin-bottom: 30px;">
+                        <input type="text" id="feeding-input" placeholder="Ce a mâncat? (ex: 120ml lapte, piure de morcov)" style="flex: 1; margin-bottom: 0;">
+                        <button class="btn-feed" onclick="addCustomFeeding()">Adaugă Masă</button>
+                    </div>
+
+                    <hr style="margin-bottom: 30px; border: 0; border-top: 1px solid #eee;">
+
+                    <h3>😴 Somn (Cronometru Real-Time)</h3>
+                    <p style="color: var(--text-light); margin-bottom: 15px;">Pornește cronometrul când bebelușul adoarme și oprește-l când se trezește.</p>
+                    <button id="sleep-timer-btn" class="btn-sleep" style="width: 100%; padding: 20px; font-size: 1.2rem;" onclick="handleSleepTimer()">😴 Start Somn</button>
                 </div>
             </section>
 
@@ -159,14 +175,15 @@
                     </div>
                 </div>
             </section>
+
             <section id="section-vaccines" class="app-section" style="display:none;">
                  <div class="card-container">
                    <h3>💉 Planificator Vaccinări</h3>
                     <p style="margin-bottom: 20px; color: var(--text-light);">Urmărește schema de vaccinare recomandată și bifează dozele administrate.</p>
-                    <div id="vaccine-list" class="vaccine-grid">
-                    </div>
-                    </div>
+                    <div id="vaccine-list" class="vaccine-grid"></div>
+                </div>
             </section>
+
             <section id="section-export" class="app-section" style="display:none;">
                 <div class="card-container export-card">
                     <h3>📊 Rapoarte și Portabilitate</h3>

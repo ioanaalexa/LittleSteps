@@ -2,7 +2,23 @@
  * --- VARIABILE GLOBALE ---
  */
 let selectedChildId = null; 
-let growthChart = null; // Reținem instanța graficului pentru a-l putea actualiza
+let growthChart = null; 
+let sleepStartTime = localStorage.getItem('sleepStartTime'); // Reține dacă bebelușul doarme deja
+
+/**
+ * --- DARK MODE ---
+ */
+function toggleDarkMode() {
+    const currentTheme = document.documentElement.getAttribute('data-theme');
+    const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', newTheme);
+    localStorage.setItem('theme', newTheme);
+}
+
+// Aplică tema salvată la pornire
+if (localStorage.getItem('theme') === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+}
 
 /**
  * --- UTILITARE: CALCUL VÂRSTĂ EXACTĂ ---
@@ -51,22 +67,88 @@ function showSection(sectionName) {
     
     const titles = { 
         timeline: 'Timeline Activități', 
+        daily: '📝 Jurnal Zilnic',
         medical: 'Istoric Medical', 
         gallery: 'Galerie Multimedia', 
         family: 'Membrii Familiei',
         evolution: '📈 Evoluție & Creștere',
+        vaccines: '💉 Schema Vaccinare',
         export: 'Export & RSS',
         admin: 'Administrare Sistem'
     };
     document.getElementById('section-title').innerText = titles[sectionName] || 'LittleSteps';
 
     if(sectionName === 'timeline') loadTimeline();
+    if(sectionName === 'daily') updateSleepUI();
     if(sectionName === 'medical') loadMedicalRecords();
     if(sectionName === 'vaccines') loadVaccines();
     if(sectionName === 'gallery') loadGallery();
     if(sectionName === 'admin') loadAdminData();
     if(sectionName === 'family') loadFamilyData();
     if(sectionName === 'evolution') loadEvolutionData();
+}
+
+/**
+ * --- JURNAL ZILNIC (HRANĂ CUSTOM + SOMN TIMER) ---
+ */
+async function addCustomFeeding() {
+    if(!selectedChildId) return alert("Selectează un copil!");
+    const input = document.getElementById('feeding-input');
+    const foodType = input.value || "Masă nespecificată";
+
+    await fetch('api/feeding.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ child_id: selectedChildId, type: foodType, details: 'Înregistrat din Jurnal' })
+    });
+    
+    input.value = ""; 
+    alert("Masă înregistrată!");
+}
+
+function handleSleepTimer() {
+    if (!selectedChildId) return alert("Selectează un copil!");
+    const btn = document.getElementById('sleep-timer-btn');
+    
+    if (!sleepStartTime) {
+        // START SOMN
+        sleepStartTime = Date.now();
+        localStorage.setItem('sleepStartTime', sleepStartTime);
+        updateSleepUI();
+    } else {
+        // STOP SOMN
+        const endTime = Date.now();
+        const durationMs = endTime - sleepStartTime;
+        const durationMin = Math.round(durationMs / 1000 / 60); 
+
+        if (confirm(`Bebelușul a dormit ${durationMin} minute. Salvezi înregistrările?`)) {
+            saveSleepRecord(durationMin);
+        }
+
+        sleepStartTime = null;
+        localStorage.removeItem('sleepStartTime');
+        btn.innerText = "😴 Start Somn";
+        btn.classList.remove('active');
+    }
+}
+
+async function saveSleepRecord(minutes) {
+    await fetch('api/sleep.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            child_id: selectedChildId, 
+            details: `Durată somn: ${minutes} minute` 
+        })
+    });
+}
+
+function updateSleepUI() {
+    const btn = document.getElementById('sleep-timer-btn');
+    if (btn && sleepStartTime) {
+        btn.classList.add('active');
+        btn.innerText = "🛑 Stop Somn (În curs...)";
+    }
 }
 
 /**
@@ -127,6 +209,7 @@ function updateSelectedChild() {
     loadMedicalRecords();
     loadGallery();
     loadEvolutionData();
+    loadVaccines();
 }
 
 async function saveFamilyMember(type) {
@@ -295,7 +378,7 @@ async function loadTimeline() {
 }
 
 /**
- * --- SALVARE ACTIVITĂȚI ---
+ * --- SALVARE ACTIVITĂȚI (Folosite în alte părți dacă e cazul) ---
  */
 async function addFeeding(type) {
     if(!selectedChildId) return alert("Selectează un copil!");
@@ -352,12 +435,14 @@ async function loadMedicalRecords() {
         </div>
     `).join('') || '<p>Nicio înregistrare medicală.</p>';
 }
+
 /**
- * --- VACCINURI---
+ * --- VACCINURI ---
  */
 async function loadVaccines() {
     if (!selectedChildId) return;
     const list = document.getElementById('vaccine-list');
+    if (!list) return;
     list.innerHTML = '<p>Se încarcă schema de vaccinare...</p>';
 
     try {
@@ -438,7 +523,6 @@ async function loadEvolutionData() {
         const response = await fetch(`api/evolution.php?child_id=${selectedChildId}`);
         const data = await response.json();
 
-        // 1. Populare Liste Text
         growthList.innerHTML = data.growth.map(g => 
             `<div class="item" style="border-left: 4px solid var(--success);">
                 ⚖️ ${g.weight}kg | 📏 ${g.height}cm <br><small>Data: ${g.recorded_date}</small>
@@ -449,7 +533,6 @@ async function loadEvolutionData() {
                 🏆 <strong>${m.milestone_name}</strong> <br><small>Data: ${m.milestone_date}</small>
             </div>`).join('') || '<p>Niciun reper înregistrat.</p>';
 
-        // 2. Generare Grafic Chart.js
         if (data.growth.length > 0) {
             const sortedData = [...data.growth].sort((a, b) => new Date(a.recorded_date) - new Date(b.recorded_date));
             
@@ -457,42 +540,42 @@ async function loadEvolutionData() {
             const weights = sortedData.map(g => g.weight);
             const heights = sortedData.map(g => g.height);
 
-            const ctx = document.getElementById('growthChart').getContext('2d');
+            const chartEl = document.getElementById('growthChart');
+            if (chartEl) {
+                const ctx = chartEl.getContext('2d');
+                if (growthChart) growthChart.destroy();
 
-            if (growthChart) {
-                growthChart.destroy();
-            }
-
-            growthChart = new Chart(ctx, {
-                type: 'line',
-                data: {
-                    labels: labels,
-                    datasets: [
-                        {
-                            label: 'Greutate (kg)',
-                            data: weights,
-                            borderColor: '#ff6b6b',
-                            backgroundColor: 'rgba(255, 107, 107, 0.1)',
-                            fill: true,
-                            tension: 0.3
-                        },
-                        {
-                            label: 'Înălțime (cm)',
-                            data: heights,
-                            borderColor: '#4ecdc4',
-                            backgroundColor: 'rgba(78, 205, 196, 0.1)',
-                            fill: true,
-                            tension: 0.3
+                growthChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Greutate (kg)',
+                                data: weights,
+                                borderColor: '#ff6b6b',
+                                backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                                fill: true,
+                                tension: 0.3
+                            },
+                            {
+                                label: 'Înălțime (cm)',
+                                data: heights,
+                                borderColor: '#4ecdc4',
+                                backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                                fill: true,
+                                tension: 0.3
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        scales: {
+                            y: { beginAtZero: false }
                         }
-                    ]
-                },
-                options: {
-                    responsive: true,
-                    scales: {
-                        y: { beginAtZero: false }
                     }
-                }
-            });
+                });
+            }
         }
     } catch (e) {
         console.error("Eroare la încărcarea evoluției:", e);
