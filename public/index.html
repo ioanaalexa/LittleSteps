@@ -32,6 +32,7 @@
                 <li id="menu-timeline" class="active" onclick="showSection('timeline')">🏠 Timeline</li>
                 <li id="menu-daily" onclick="showSection('daily')">📝 Jurnal Zilnic</li>
                 <li id="menu-medical" onclick="showSection('medical')">🏥 Medical</li>
+                <li id="menu-teeth" onclick="showSection('teeth')">🦷 Dentiție</li>
                 <li id="menu-evolution" onclick="showSection('evolution')">📈 Evoluție</li>
                 <li id="menu-vaccines" onclick="showSection('vaccines')">💉 Vaccinuri</li>
                 <li id="menu-gallery" onclick="showSection('gallery')">🖼️ Galerie</li>
@@ -96,6 +97,27 @@
                     </form>
                     <hr>
                     <div id="medical-list" class="list-container"></div>
+                </div>
+            </section>
+
+            <section id="section-teeth" class="app-section" style="display:none;">
+                <div class="card-container" style="text-align: center;">
+                    <h3>🦷 Harta Primilor Dințișori</h3>
+                    <p style="color: var(--text-light); margin-bottom: 20px;">Apasă pe un dințișor pentru a marca data apariției lui.</p>
+                    
+                    <div class="tooth-map-container" style="max-width: 400px; margin: 0 auto; background: var(--bg); padding: 30px; border-radius: 30px;">
+                        <h4 style="margin-bottom: 15px; color: var(--text-light); font-size: 0.9rem;">ARCADA SUPERIOARĂ</h4>
+                        <div id="teeth-upper" class="gum-arch" style="margin-bottom: 40px;"></div>
+                        
+                        <div style="height: 2px; background: var(--primary-soft); width: 60%; margin: 0 auto 40px;"></div>
+                        
+                        <h4 style="margin-bottom: 15px; color: var(--text-light); font-size: 0.9rem;">ARCADA INFERIOARĂ</h4>
+                        <div id="teeth-lower" class="gum-arch"></div>
+                    </div>
+
+                    <div id="tooth-info" style="margin-top: 30px; padding: 15px; min-height: 50px;">
+                        <p style="font-style: italic; color: var(--text-light);">Selectează un dinte pentru detalii</p>
+                    </div>
                 </div>
             </section>
 

@@ -150,7 +150,55 @@ function updateSleepUI() {
         btn.innerText = "🛑 Stop Somn (În curs...)";
     }
 }
+// Adaugă la începutul listei de titluri din showSection
+// teeth: '🦷 Harta Dentiție'
 
+async function loadTeeth() {
+    if (!selectedChildId) return;
+    
+    const upper = document.getElementById('teeth-upper');
+    const lower = document.getElementById('teeth-lower');
+    
+    // Luăm datele din API
+    const res = await fetch(`api/teeth.php?child_id=${selectedChildId}`);
+    const eruptedTeeth = await res.json(); // { 'tooth-1': '2026-05-15' }
+
+    // Generăm 10 dinți sus și 10 jos
+    generateArch(upper, 'U', eruptedTeeth);
+    generateArch(lower, 'L', eruptedTeeth);
+}
+
+function generateArch(container, prefix, data) {
+    container.innerHTML = '';
+    for (let i = 1; i <= 10; i++) {
+        const id = `${prefix}-${i}`;
+        const date = data[id] || null;
+        const div = document.createElement('div');
+        div.className = `tooth ${date ? 'erupted' : ''}`;
+        div.innerHTML = i;
+        div.onclick = () => markTooth(id, date);
+        container.appendChild(div);
+    }
+}
+
+async function markTooth(toothId, currentDate) {
+    if (currentDate) {
+        alert(`Acest dințișor a ieșit pe data de: ${currentDate}`);
+        return;
+    }
+    
+    const date = prompt("Pe ce dată a apărut dințișorul? (AAAA-LL-ZZ)", new Date().toISOString().split('T')[0]);
+    
+    if (date) {
+        await fetch('api/teeth.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ child_id: selectedChildId, tooth_id: toothId, date: date })
+        });
+        loadTeeth();
+        loadTimeline(); // Să apară și în istoric!
+    }
+}
 /**
  * --- GESTIONARE FAMILIE ȘI GEN ---
  */
