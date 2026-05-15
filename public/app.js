@@ -69,6 +69,7 @@ function showSection(sectionName) {
         timeline: 'Timeline Activități', 
         daily: '📝 Jurnal Zilnic',
         medical: 'Istoric Medical', 
+        teeth: '🦷 Harta Dentiție', // MODIFICAT: Adăugat titlu
         gallery: 'Galerie Multimedia', 
         family: 'Membrii Familiei',
         evolution: '📈 Evoluție & Creștere',
@@ -82,6 +83,7 @@ function showSection(sectionName) {
     if(sectionName === 'daily') updateSleepUI();
     if(sectionName === 'medical') loadMedicalRecords();
     if(sectionName === 'vaccines') loadVaccines();
+    if(sectionName === 'teeth') loadTeeth(); // MODIFICAT: Adăugat apelare funcție
     if(sectionName === 'gallery') loadGallery();
     if(sectionName === 'admin') loadAdminData();
     if(sectionName === 'family') loadFamilyData();
@@ -150,22 +152,26 @@ function updateSleepUI() {
         btn.innerText = "🛑 Stop Somn (În curs...)";
     }
 }
-// Adaugă la începutul listei de titluri din showSection
-// teeth: '🦷 Harta Dentiție'
 
+/**
+ * --- DENTIȚIE ---
+ */
 async function loadTeeth() {
     if (!selectedChildId) return;
     
     const upper = document.getElementById('teeth-upper');
     const lower = document.getElementById('teeth-lower');
-    
-    // Luăm datele din API
-    const res = await fetch(`api/teeth.php?child_id=${selectedChildId}`);
-    const eruptedTeeth = await res.json(); // { 'tooth-1': '2026-05-15' }
+    if (!upper || !lower) return;
 
-    // Generăm 10 dinți sus și 10 jos
-    generateArch(upper, 'U', eruptedTeeth);
-    generateArch(lower, 'L', eruptedTeeth);
+    try {
+        const res = await fetch(`api/teeth.php?child_id=${selectedChildId}`);
+        const eruptedTeeth = await res.json(); 
+
+        generateArch(upper, 'U', eruptedTeeth);
+        generateArch(lower, 'L', eruptedTeeth);
+    } catch (e) {
+        console.error("Eroare la încărcarea dinților:", e);
+    }
 }
 
 function generateArch(container, prefix, data) {
@@ -196,9 +202,10 @@ async function markTooth(toothId, currentDate) {
             body: JSON.stringify({ child_id: selectedChildId, tooth_id: toothId, date: date })
         });
         loadTeeth();
-        loadTimeline(); // Să apară și în istoric!
+        if (typeof loadTimeline === "function") loadTimeline(); 
     }
 }
+
 /**
  * --- GESTIONARE FAMILIE ȘI GEN ---
  */
@@ -258,6 +265,7 @@ function updateSelectedChild() {
     loadGallery();
     loadEvolutionData();
     loadVaccines();
+    loadTeeth(); // MODIFICAT: Adăugat update la schimbarea copilului
 }
 
 async function saveFamilyMember(type) {
@@ -395,16 +403,10 @@ async function loadTimeline() {
             }))
         ];
 
-        // --- SORTARE REPARATĂ: Data Nouă sus, iar la date egale, ID-ul mai mare sus ---
         allEvents.sort((a, b) => {
             const timeA = new Date(a.date).getTime();
             const timeB = new Date(b.date).getTime();
-            
-            if (timeB !== timeA) {
-                return timeB - timeA; // Sortează după timp (cel mai nou primul)
-            }
-            
-            // Dacă timpul este identic (ex: ambele la 00:00:00), folosim ID-ul ca să apară ultima introdusă sus
+            if (timeB !== timeA) return timeB - timeA;
             return (b.id || 0) - (a.id || 0);
         });
 
@@ -415,7 +417,6 @@ async function loadTimeline() {
 
         list.innerHTML = allEvents.map(item => {
             const dateObj = new Date(item.date);
-            // Dacă e Medical/Evoluție, afișăm doar data, altfel afișăm Data + Ora
             const timeString = item.isDateOnly 
                 ? dateObj.toLocaleDateString('ro-RO') 
                 : dateObj.toLocaleString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric', hour: '2-digit', minute: '2-digit' });
@@ -439,7 +440,7 @@ async function loadTimeline() {
 }
 
 /**
- * --- SALVARE ACTIVITĂȚI (Folosite în alte părți dacă e cazul) ---
+ * --- SALVARE ACTIVITĂȚI ---
  */
 async function addFeeding(type) {
     if(!selectedChildId) return alert("Selectează un copil!");
@@ -596,7 +597,6 @@ async function loadEvolutionData() {
 
         if (data.growth.length > 0) {
             const sortedData = [...data.growth].sort((a, b) => new Date(a.recorded_date) - new Date(b.recorded_date));
-            
             const labels = sortedData.map(g => g.recorded_date);
             const weights = sortedData.map(g => g.weight);
             const heights = sortedData.map(g => g.height);
@@ -605,7 +605,6 @@ async function loadEvolutionData() {
             if (chartEl) {
                 const ctx = chartEl.getContext('2d');
                 if (growthChart) growthChart.destroy();
-
                 growthChart = new Chart(ctx, {
                     type: 'line',
                     data: {
