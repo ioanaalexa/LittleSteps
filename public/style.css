@@ -263,3 +263,37 @@ button[onclick*="save"] { background: var(--primary); color: white; }
     color: var(--text);
     box-shadow: 0 4px 10px rgba(0,0,0,0.1);
 }
+.gum-arch {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 15px;
+}
+
+.tooth {
+    width: 35px;
+    height: 40px;
+    background: #d1d8e0; /* Gri - dinte lipsă */
+    border-radius: 8px 8px 15px 15px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    color: white;
+    font-weight: bold;
+    border: 2px solid transparent;
+}
+
+.tooth:hover {
+    transform: scale(1.1);
+    background: #a5b1c2;
+}
+
+.tooth.erupted {
+    background: white !important;
+    border: 2px solid var(--success);
+    color: var(--text);
+    box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+}
