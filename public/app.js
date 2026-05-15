@@ -123,22 +123,59 @@ async function saveFamilyMember(type) {
  * --- AUTENTIFICARE ---
  */
 async function handleAuth(action) {
-    const email = document.getElementById('auth-email').value;
-    const password = document.getElementById('auth-password').value;
-    const fullname = document.getElementById('auth-fullname').value;
+    console.log("Încercare:", action);
+    
+    // Luăm valorile
+    const emailField = document.getElementById('auth-email');
+    const passwordField = document.getElementById('auth-password');
+    const fullnameField = document.getElementById('auth-fullname');
 
-    const response = await fetch(`../api/auth.php?action=${action}`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, fullname })
-    });
+    if (!emailField || !passwordField) {
+        console.error("ID-urile 'auth-email' sau 'auth-password' lipsesc din HTML!");
+        return;
+    }
 
-    const result = await response.json();
-    if (response.ok) {
-        if (action === 'login') setupUserUI(result.user);
-        else alert("Cont creat! Acum te poți loga.");
-    } else {
-        alert(result.error);
+    const email = emailField.value;
+    const password = passwordField.value;
+    const fullname = fullnameField ? fullnameField.value : "";
+
+    if (!email || !password) {
+        alert("Te rog completează email-ul și parola.");
+        return;
+    }
+
+    try {
+        const response = await fetch(`../api/auth.php?action=${action}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, fullname })
+        });
+
+        // Citim răspunsul ca text mai întâi ca să vedem dacă e eroare PHP
+        const rawResponse = await response.text();
+        console.log("Răspuns brut server:", rawResponse);
+
+        let result;
+        try {
+            result = JSON.parse(rawResponse);
+        } catch (e) {
+            console.error("Serverul nu a trimis JSON:", rawResponse);
+            alert("Eroare de sistem: Serverul a trimis un răspuns invalid. Verifică consola!");
+            return;
+        }
+
+        if (response.ok) {
+            if (action === 'login') {
+                setupUserUI(result.user);
+            } else {
+                alert("Cont creat! Acum te poți loga.");
+            }
+        } else {
+            alert("Eroare: " + (result.error || "Ceva nu a mers corect."));
+        }
+    } catch (e) {
+        console.error("Eroare Fetch:", e);
+        alert("Eroare de rețea: " + e.message);
     }
 }
 
