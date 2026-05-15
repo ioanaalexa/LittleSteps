@@ -1,23 +1,82 @@
 /**
+ * ==========================================
+ * LITTLESTEPS - APP.JS
+ * ==========================================
+ * Proiect: Baby Tracker
+ * Autor: Alexa Ioana
+ * Versiune: 2.0 (Include Cookies & GDPR)
+ */
+
+/**
+ * --- UTILITARE COOKIES (Cerință Prof) ---
+ * Folosite pentru a reține preferințele pe termen lung.
+ */
+
+// Setează un cookie
+function setCookie(name, value, days) {
+    const d = new Date();
+    d.setTime(d.getTime() + (days * 24 * 60 * 60 * 1000));
+    let expires = "expires=" + d.toUTCString();
+    document.cookie = name + "=" + value + ";" + expires + ";path=/";
+}
+
+// Citește un cookie
+function getCookie(name) {
+    let nameEQ = name + "=";
+    let ca = document.cookie.split(';');
+    for (let i = 0; i < ca.length; i++) {
+        let c = ca[i];
+        while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+        if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
+    }
+    return null;
+}
+
+/**
  * --- VARIABILE GLOBALE ---
  */
 let selectedChildId = null; 
 let growthChart = null; 
-let sleepStartTime = localStorage.getItem('sleepStartTime'); // Reține dacă bebelușul doarme deja
+// Cronometrul de somn rămâne în localStorage pentru a nu expira la sesiune
+let sleepStartTime = localStorage.getItem('sleepStartTime'); 
 
 /**
- * --- DARK MODE ---
+ * --- DARK MODE (IMPLEMENTARE COOKIES) ---
+ * Reține tema chiar și după ce browserul este închis.
  */
 function toggleDarkMode() {
     const currentTheme = document.documentElement.getAttribute('data-theme');
     const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+    
     document.documentElement.setAttribute('data-theme', newTheme);
-    localStorage.setItem('theme', newTheme);
+    
+    // Salvăm preferința într-un cookie valabil un an
+    setCookie("theme", newTheme, 365);
 }
 
-// Aplică tema salvată la pornire
-if (localStorage.getItem('theme') === 'dark') {
+// Aplică tema din cookie la încărcarea paginii
+if (getCookie("theme") === 'dark') {
     document.documentElement.setAttribute('data-theme', 'dark');
+}
+
+/**
+ * --- GESTIONARE CONSIMȚĂMÂNT COOKIE (GDPR) ---
+ */
+function checkCookieConsent() {
+    if (!getCookie("cookie_consent")) {
+        const banner = document.getElementById('cookie-banner');
+        if (banner) {
+            banner.style.display = 'block';
+        }
+    }
+}
+
+function acceptCookies() {
+    setCookie("cookie_consent", "accepted", 30); // Accept valabil 30 de zile
+    const banner = document.getElementById('cookie-banner');
+    if (banner) {
+        banner.style.display = 'none';
+    }
 }
 
 /**
@@ -56,8 +115,15 @@ function getAgeString(birthday) {
  * --- NAVIGARE ȘI UI ---
  */
 function showSection(sectionName) {
-    document.querySelectorAll('.app-section').forEach(section => section.style.display = 'none');
-    document.querySelectorAll('.sidebar li').forEach(li => li.classList.remove('active'));
+    // Ascundem toate secțiunile
+    document.querySelectorAll('.app-section').forEach(section => {
+        section.style.display = 'none';
+    });
+    
+    // Eliminăm clasa activă din meniu
+    document.querySelectorAll('.sidebar li').forEach(li => {
+        li.classList.remove('active');
+    });
 
     const targetSection = document.getElementById(`section-${sectionName}`);
     const targetMenu = document.getElementById(`menu-${sectionName}`);
@@ -66,24 +132,26 @@ function showSection(sectionName) {
     if (targetMenu) targetMenu.classList.add('active');
     
     const titles = { 
-        timeline: 'Timeline Activități', 
+        timeline: '🏠 Timeline Activități', 
         daily: '📝 Jurnal Zilnic',
-        medical: 'Istoric Medical', 
-        teeth: '🦷 Harta Dentiție', // MODIFICAT: Adăugat titlu
-        gallery: 'Galerie Multimedia', 
-        family: 'Membrii Familiei',
+        medical: '🏥 Istoric Medical', 
+        teeth: '🦷 Harta Dentiție',
         evolution: '📈 Evoluție & Creștere',
         vaccines: '💉 Schema Vaccinare',
-        export: 'Export & RSS',
-        admin: 'Administrare Sistem'
+        gallery: '🖼️ Galerie Multimedia', 
+        family: '👪 Membrii Familiei',
+        export: '📊 Export & RSS',
+        admin: '🛡️ Administrare Sistem'
     };
+    
     document.getElementById('section-title').innerText = titles[sectionName] || 'LittleSteps';
 
+    // Încărcăm datele specifice fiecărei secțiuni
     if(sectionName === 'timeline') loadTimeline();
     if(sectionName === 'daily') updateSleepUI();
     if(sectionName === 'medical') loadMedicalRecords();
     if(sectionName === 'vaccines') loadVaccines();
-    if(sectionName === 'teeth') loadTeeth(); // MODIFICAT: Adăugat apelare funcție
+    if(sectionName === 'teeth') loadTeeth();
     if(sectionName === 'gallery') loadGallery();
     if(sectionName === 'admin') loadAdminData();
     if(sectionName === 'family') loadFamilyData();
@@ -94,18 +162,29 @@ function showSection(sectionName) {
  * --- JURNAL ZILNIC (HRANĂ CUSTOM + SOMN TIMER) ---
  */
 async function addCustomFeeding() {
-    if(!selectedChildId) return alert("Selectează un copil!");
+    if(!selectedChildId) return alert("Te rugăm să selectezi un copil!");
+    
     const input = document.getElementById('feeding-input');
     const foodType = input.value || "Masă nespecificată";
 
-    await fetch('api/feeding.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ child_id: selectedChildId, type: foodType, details: 'Înregistrat din Jurnal' })
-    });
-    
-    input.value = ""; 
-    alert("Masă înregistrată!");
+    try {
+        const response = await fetch('api/feeding.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                child_id: selectedChildId, 
+                type: foodType, 
+                details: 'Înregistrat manual în jurnal' 
+            })
+        });
+
+        if (response.ok) {
+            input.value = ""; 
+            alert("Hrănire înregistrată cu succes!");
+        }
+    } catch (error) {
+        console.error("Eroare la salvarea hranei:", error);
+    }
 }
 
 function handleSleepTimer() {
@@ -123,10 +202,11 @@ function handleSleepTimer() {
         const durationMs = endTime - sleepStartTime;
         const durationMin = Math.round(durationMs / 1000 / 60); 
 
-        if (confirm(`Bebelușul a dormit ${durationMin} minute. Salvezi înregistrările?`)) {
+        if (confirm(`Bebelușul a dormit ${durationMin} minute. Salvezi această sesiune?`)) {
             saveSleepRecord(durationMin);
         }
 
+        // Resetare stare
         sleepStartTime = null;
         localStorage.removeItem('sleepStartTime');
         btn.innerText = "😴 Start Somn";
@@ -135,14 +215,18 @@ function handleSleepTimer() {
 }
 
 async function saveSleepRecord(minutes) {
-    await fetch('api/sleep.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            child_id: selectedChildId, 
-            details: `Durată somn: ${minutes} minute` 
-        })
-    });
+    try {
+        await fetch('api/sleep.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                child_id: selectedChildId, 
+                details: `Durată somn: ${minutes} minute` 
+            })
+        });
+    } catch (error) {
+        console.error("Eroare la salvarea somnului:", error);
+    }
 }
 
 function updateSleepUI() {
@@ -170,7 +254,7 @@ async function loadTeeth() {
         generateArch(upper, 'U', eruptedTeeth);
         generateArch(lower, 'L', eruptedTeeth);
     } catch (e) {
-        console.error("Eroare la încărcarea dinților:", e);
+        console.error("Eroare la încărcarea hărții dentare:", e);
     }
 }
 
@@ -189,25 +273,28 @@ function generateArch(container, prefix, data) {
 
 async function markTooth(toothId, currentDate) {
     if (currentDate) {
-        alert(`Acest dințișor a ieșit pe data de: ${currentDate}`);
+        alert(`Acest dințișor a apărut pe data de: ${currentDate}`);
         return;
     }
     
     const date = prompt("Pe ce dată a apărut dințișorul? (AAAA-LL-ZZ)", new Date().toISOString().split('T')[0]);
     
     if (date) {
-        await fetch('api/teeth.php', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ child_id: selectedChildId, tooth_id: toothId, date: date })
-        });
-        loadTeeth();
-        if (typeof loadTimeline === "function") loadTimeline(); 
+        try {
+            await fetch('api/teeth.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ child_id: selectedChildId, tooth_id: toothId, date: date })
+            });
+            loadTeeth();
+        } catch (e) {
+            console.error("Eroare la salvarea dintelui:", e);
+        }
     }
 }
 
 /**
- * --- GESTIONARE FAMILIE ȘI GEN ---
+ * --- GESTIONARE FAMILIE ȘI COPII ---
  */
 async function loadFamilyData() {
     const display = document.getElementById('family-list-display');
@@ -238,8 +325,10 @@ async function loadFamilyData() {
                     <small>Născut la: ${c.birthday}</small>
                 </div>`;
         });
+        
         if (display) display.innerHTML = html;
 
+        // Populăm selectorul de copii activi
         if (data.children.length > 0) {
             selector.innerHTML = data.children.map(c => {
                 const emoji = (c.gender === 'F') ? '👧' : '👦';
@@ -251,7 +340,7 @@ async function loadFamilyData() {
                 loadTimeline();
             }
         } else {
-            selector.innerHTML = '<option value="">Adaugă un copil în Familie...</option>';
+            selector.innerHTML = '<option value="">Adaugă un copil...</option>';
         }
     } catch (e) {
         console.error("Eroare încărcare familie:", e);
@@ -260,12 +349,13 @@ async function loadFamilyData() {
 
 function updateSelectedChild() {
     selectedChildId = document.getElementById('active-child-select').value;
+    // Reîncărcăm toate secțiunile pentru noul copil
     loadTimeline();
     loadMedicalRecords();
     loadGallery();
     loadEvolutionData();
     loadVaccines();
-    loadTeeth(); // MODIFICAT: Adăugat update la schimbarea copilului
+    loadTeeth();
 }
 
 async function saveFamilyMember(type) {
@@ -290,7 +380,7 @@ async function saveFamilyMember(type) {
     });
 
     if (response.ok) {
-        alert("Salvat cu succes!");
+        alert("Membru adăugat!");
         loadFamilyData();
     }
 }
@@ -304,7 +394,7 @@ async function handleAuth(action) {
     const fullnameField = document.getElementById('auth-fullname');
     const fullname = fullnameField ? fullnameField.value : "";
 
-    if(!email || !password) return alert("Te rog introdu email și parolă!");
+    if(!email || !password) return alert("Introdu datele de acces!");
 
     try {
         const response = await fetch(`api/auth.php?action=${action}`, {
@@ -313,25 +403,19 @@ async function handleAuth(action) {
             body: JSON.stringify({ email, password, fullname })
         });
 
-        const rawResponse = await response.text();
-        let result;
-        try {
-            result = JSON.parse(rawResponse);
-        } catch (e) {
-            return alert("Eroare Server: Verifică consola!");
-        }
+        const result = await response.json();
 
         if (response.ok) {
             if (action === 'login') {
                 setupUserUI(result.user);
             } else {
-                alert("Cont creat! Acum te poți loga.");
+                alert("Înregistrare reușită! Acum te poți conecta.");
             }
         } else {
-            alert("Eroare: " + (result.error || "Ceva nu a mers corect."));
+            alert("Eroare: " + (result.error || "Problemă server."));
         }
     } catch (e) {
-        alert("Eroare de rețea: " + e.message);
+        alert("Eroare rețea.");
     }
 }
 
@@ -351,8 +435,13 @@ async function checkLoginStatus() {
     try {
         const res = await fetch('api/auth.php?action=status');
         const result = await res.json();
-        if (res.ok && result.logged_in) setupUserUI(result.user);
+        if (res.ok && result.logged_in) {
+            setupUserUI(result.user);
+        }
     } catch(e) {}
+    
+    // Verificăm GDPR la fiecare pornire
+    checkCookieConsent();
 }
 
 function logout() {
@@ -360,7 +449,7 @@ function logout() {
 }
 
 /**
- * --- TIMELINE UNIFICAT ---
+ * --- TIMELINE INTELIGENT (SORTARE REPARATĂ) ---
  */
 async function loadTimeline() {
     if (!selectedChildId) return;
@@ -368,6 +457,7 @@ async function loadTimeline() {
     list.innerHTML = '<p class="placeholder-text">Se generează timeline-ul...</p>';
 
     try {
+        // Cerem toate datele simultan pentru viteză
         const [fRes, sRes, medRes, mediaRes, evoRes] = await Promise.all([
             fetch(`api/feeding.php?child_id=${selectedChildId}`),
             fetch(`api/sleep.php?child_id=${selectedChildId}`),
@@ -382,6 +472,7 @@ async function loadTimeline() {
         const media = await mediaRes.json();
         const evolution = await evoRes.json();
 
+        // Combinăm totul într-un singur tablou de evenimente
         let allEvents = [
             ...feeding.map(f => ({ ...f, icon: '🍼', title: `Hrană: ${f.type}`, date: f.created_at })),
             ...sleep.map(s => ({ ...s, icon: '😴', title: 'Somn', date: s.created_at })),
@@ -403,18 +494,24 @@ async function loadTimeline() {
             }))
         ];
 
+        // --- SORTAREA REPARATĂ: Cele mai noi sus, cu Tie-Breaker pe ID ---
         allEvents.sort((a, b) => {
             const timeA = new Date(a.date).getTime();
             const timeB = new Date(b.date).getTime();
-            if (timeB !== timeA) return timeB - timeA;
+            
+            if (timeB !== timeA) {
+                return timeB - timeA; 
+            }
+            // Dacă ora este identică, folosim ID-ul ca să apară ultima introdusă deasupra
             return (b.id || 0) - (a.id || 0);
         });
 
         if (allEvents.length === 0) {
-            list.innerHTML = `<p>Nicio activitate pentru profilul selectat.</p>`;
+            list.innerHTML = `<p>Nicio activitate înregistrată.</p>`;
             return;
         }
 
+        // Randare HTML Timeline
         list.innerHTML = allEvents.map(item => {
             const dateObj = new Date(item.date);
             const timeString = item.isDateOnly 
@@ -440,28 +537,8 @@ async function loadTimeline() {
 }
 
 /**
- * --- SALVARE ACTIVITĂȚI ---
+ * --- EVENIMENTE MEDICALE ---
  */
-async function addFeeding(type) {
-    if(!selectedChildId) return alert("Selectează un copil!");
-    await fetch('api/feeding.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ child_id: selectedChildId, type: type, details: 'Masă înregistrată' })
-    });
-    loadTimeline();
-}
-
-async function addSleep() {
-    if(!selectedChildId) return alert("Selectează un copil!");
-    await fetch('api/sleep.php', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ child_id: selectedChildId, details: 'Sesiune de somn' })
-    });
-    loadTimeline();
-}
-
 async function addMedicalRecord() {
     const data = {
         child_id: selectedChildId,
@@ -482,20 +559,21 @@ async function addMedicalRecord() {
     if (response.ok) {
         loadMedicalRecords();
         document.getElementById('medical-form').reset();
-        loadTimeline();
     }
 }
 
 async function loadMedicalRecords() {
+    if (!selectedChildId) return;
     const list = document.getElementById('medical-list');
     const res = await fetch(`api/medical.php?child_id=${selectedChildId}`);
     const records = await res.json();
+    
     list.innerHTML = records.map(r => `
         <div class="item medical-item">
             <strong>🏥 ${r.event_date} - ${r.diagnosis}</strong>
             <p>💊 ${r.treatment || 'Fără tratament'} | 🩺 ${r.doctor || 'N/A'}</p>
         </div>
-    `).join('') || '<p>Nicio înregistrare medicală.</p>';
+    `).join('') || '<p>Nicio vizită medicală înregistrată.</p>';
 }
 
 /**
@@ -556,25 +634,26 @@ async function uploadMedia() {
 
     if (response.ok) {
         loadGallery();
-        loadTimeline();
         document.getElementById('upload-form').reset();
     }
 }
 
 async function loadGallery() {
+    if (!selectedChildId) return;
     const grid = document.getElementById('gallery-grid');
     const res = await fetch(`api/media.php?child_id=${selectedChildId}`);
     const items = await res.json();
+    
     grid.innerHTML = items.map(item => `
         <div class="gallery-card">
-            <img src="${item.file_path}" alt="Foto">
+            <img src="${item.file_path}" alt="Moment">
             <p>${item.caption || ''}</p>
         </div>
-    `).join('') || '<p>Galeria este goală.</p>';
+    `).join('') || '<p>Galeria este încă goală.</p>';
 }
 
 /**
- * --- EVOLUȚIE (CU GRAFIC) ---
+ * --- EVOLUȚIE (GRAFICE ȘI MILESTONES) ---
  */
 async function loadEvolutionData() {
     if (!selectedChildId) return;
@@ -588,57 +667,60 @@ async function loadEvolutionData() {
         growthList.innerHTML = data.growth.map(g => 
             `<div class="item" style="border-left: 4px solid var(--success);">
                 ⚖️ ${g.weight}kg | 📏 ${g.height}cm <br><small>Data: ${g.recorded_date}</small>
-            </div>`).join('') || '<p>Nicio măsurătoare încă.</p>';
+            </div>`).join('') || '<p>Fără măsurători.</p>';
 
         milestonesList.innerHTML = data.milestones.map(m => 
             `<div class="item" style="border-left: 4px solid var(--warning);">
                 🏆 <strong>${m.milestone_name}</strong> <br><small>Data: ${m.milestone_date}</small>
-            </div>`).join('') || '<p>Niciun reper înregistrat.</p>';
+            </div>`).join('') || '<p>Fără repere.</p>';
 
         if (data.growth.length > 0) {
-            const sortedData = [...data.growth].sort((a, b) => new Date(a.recorded_date) - new Date(b.recorded_date));
-            const labels = sortedData.map(g => g.recorded_date);
-            const weights = sortedData.map(g => g.weight);
-            const heights = sortedData.map(g => g.height);
-
-            const chartEl = document.getElementById('growthChart');
-            if (chartEl) {
-                const ctx = chartEl.getContext('2d');
-                if (growthChart) growthChart.destroy();
-                growthChart = new Chart(ctx, {
-                    type: 'line',
-                    data: {
-                        labels: labels,
-                        datasets: [
-                            {
-                                label: 'Greutate (kg)',
-                                data: weights,
-                                borderColor: '#ff6b6b',
-                                backgroundColor: 'rgba(255, 107, 107, 0.1)',
-                                fill: true,
-                                tension: 0.3
-                            },
-                            {
-                                label: 'Înălțime (cm)',
-                                data: heights,
-                                borderColor: '#4ecdc4',
-                                backgroundColor: 'rgba(78, 205, 196, 0.1)',
-                                fill: true,
-                                tension: 0.3
-                            }
-                        ]
-                    },
-                    options: {
-                        responsive: true,
-                        scales: {
-                            y: { beginAtZero: false }
-                        }
-                    }
-                });
-            }
+            renderChart(data.growth);
         }
     } catch (e) {
-        console.error("Eroare la încărcarea evoluției:", e);
+        console.error("Eroare evoluție:", e);
+    }
+}
+
+function renderChart(growthData) {
+    const sortedData = [...growthData].sort((a, b) => new Date(a.recorded_date) - new Date(b.recorded_date));
+    const labels = sortedData.map(g => g.recorded_date);
+    const weights = sortedData.map(g => g.weight);
+    const heights = sortedData.map(g => g.height);
+
+    const chartEl = document.getElementById('growthChart');
+    if (chartEl) {
+        const ctx = chartEl.getContext('2d');
+        if (growthChart) growthChart.destroy();
+        
+        growthChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [
+                    {
+                        label: 'Greutate (kg)',
+                        data: weights,
+                        borderColor: '#ff6b6b',
+                        backgroundColor: 'rgba(255, 107, 107, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    },
+                    {
+                        label: 'Înălțime (cm)',
+                        data: heights,
+                        borderColor: '#4ecdc4',
+                        backgroundColor: 'rgba(78, 205, 196, 0.1)',
+                        fill: true,
+                        tension: 0.3
+                    }
+                ]
+            },
+            options: {
+                responsive: true,
+                scales: { y: { beginAtZero: false } }
+            }
+        });
     }
 }
 
@@ -650,11 +732,11 @@ async function saveEvolution(target) {
         payload.date = document.getElementById('growth-date').value;
         payload.weight = document.getElementById('growth-weight').value;
         payload.height = document.getElementById('growth-height').value;
-        if(!payload.date) return alert("Selectează data!");
+        if(!payload.date) return alert("Introdu data!");
     } else {
         payload.date = document.getElementById('milestone-date').value;
         payload.name = document.getElementById('milestone-name').value;
-        if(!payload.name || !payload.date) return alert("Numele și data sunt obligatorii!");
+        if(!payload.name || !payload.date) return alert("Date incomplete!");
     }
 
     const response = await fetch('api/evolution.php', {
@@ -664,14 +746,12 @@ async function saveEvolution(target) {
     });
 
     if (response.ok) {
-        alert("Date salvate!");
         loadEvolutionData();
-        loadTimeline();
     }
 }
 
 /**
- * --- ADMIN ---
+ * --- PANOU ADMIN ---
  */
 async function loadAdminData() {
     const list = document.getElementById('admin-user-list');
@@ -691,7 +771,7 @@ async function loadAdminData() {
 }
 
 async function deleteUser(id) {
-    if (confirm("Sigur ștergi?")) {
+    if (confirm("Sigur dorești să ștergi acest utilizator?")) {
         await fetch(`api/admin.php?id=${id}`, { method: 'DELETE' });
         loadAdminData();
     }
@@ -704,5 +784,7 @@ function exportData(format) {
     window.location.href = `api/export.php?format=${format}&child_id=${selectedChildId}`;
 }
 
-// Start
+/**
+ * --- PORNIRE APLICAȚIE ---
+ */
 checkLoginStatus();
