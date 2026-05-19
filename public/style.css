@@ -371,3 +371,43 @@ button[onclick*="save"] { background: var(--primary); color: white; }
     width: 100% !important;
     height: 100% !important;
 }
+/* --- HARTA DENTIȚIE REPARATĂ VIZUAL --- */
+.gum-arch {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    padding: 20px;
+    background: #ffe0e0 !important; /* Forțăm fundalul roz al gingiei */
+    border-radius: 15px;
+    min-height: 60px; /* Ne asigurăm că nu se strânge la zero */
+    margin-top: 10px;
+}
+
+.tooth {
+    width: 35px !important;
+    height: 40px !important;
+    background: #b2bec3 !important; /* Gri închis clar pentru dinții care nu au ieșit */
+    border-radius: 8px 8px 15px 15px;
+    cursor: pointer;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem !important;
+    color: #ffffff !important; /* Textul cu numărul dintelui va fi alb pe fundal gri */
+    font-weight: bold;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+/* Stil pentru când dintele a erupt (este salvat în baza de date) */
+.tooth.erupted {
+    background: #ffffff !important; /* Dintele devine alb curat */
+    border: 2px solid #55efc4 !important; /* Contur verde de succes */
+    color: #2d3436 !important; /* Numărul devine închis la culoare */
+    box-shadow: 0 4px 10px rgba(0,0,0,0.15);
+}
+
+.tooth:hover {
+    transform: scale(1.15);
+    background: #74b9ff !important; /* Devine albastru la hover ca să știi că e selectabil */
+}
