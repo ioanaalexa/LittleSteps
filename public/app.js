@@ -448,6 +448,13 @@ async function loadTeeth() {
  * @param {string} prefix - 'U' pentru Upper, 'L' pentru Lower.
  * @param {object} data - Obiectul cu dinții deja ieșiți.
  */
+/**
+ * Creează elementele DOM pentru o arcadă dentară.
+ * FIX: S-a corectat variabila de verificare pentru a randa dinții corect.
+ * * @param {HTMLElement} container - Div-ul unde se randează.
+ * @param {string} prefix - 'U' pentru Upper, 'L' pentru Lower.
+ * @param {object} data - Obiectul cu dinții deja ieșiți.
+ 
 function renderTeethArch(container, prefix, data) {
     container.innerHTML = '';
     
@@ -456,7 +463,8 @@ function renderTeethArch(container, prefix, data) {
         const eruptionDate = data[toothId] || null;
         
         const toothDiv = document.createElement('div');
-        toothDiv.className = `tooth ${erosionDate ? 'erupted' : ''}`;
+        // REPARAT: Aici era eroarea, scria erosionDate în loc de eruptionDate
+        toothDiv.className = `tooth ${eruptionDate ? 'erupted' : ''}`;
         toothDiv.innerHTML = i;
         
         // Atribuim evenimentul de click
@@ -465,43 +473,6 @@ function renderTeethArch(container, prefix, data) {
         container.appendChild(toothDiv);
     }
 }
-
-/**
- * Gestionează click-ul pe un dinte din hartă.
- * * @param {string} id - Identificatorul dintelui.
- * @param {string|null} date - Data erupției (dacă există).
- */
-async function handleToothClick(id, date) {
-    if (date) {
-        alert(`Acest dințișor a apărut la data de: ${date}`);
-        return;
-    }
-    
-    const inputDate = prompt("Introduceți data apariției dințișorului (YYYY-MM-DD):", 
-                             new Date().toISOString().split('T')[0]);
-    
-    if (inputDate) {
-        try {
-            const response = await fetch('api/teeth.php', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    child_id: selectedChildId, 
-                    tooth_id: id, 
-                    date: inputDate 
-                })
-            });
-            
-            if (response.ok) {
-                console.log("[Teeth] Dinte marcat ca erupt.");
-                loadTeeth(); // Refresh vizual
-            }
-        } catch (error) {
-            console.error("[Teeth Error] Salvare eșuată:", error);
-        }
-    }
-}
-
 
 /**
  * -----------------------------------------------------------------------------
