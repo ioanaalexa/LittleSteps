@@ -427,34 +427,42 @@ async function loadTeeth() {
     const upperContainer = document.getElementById('teeth-upper');
     const lowerContainer = document.getElementById('teeth-lower');
     
-    if (!upperContainer || !lowerContainer) return;
+    // Verificare de urgență pentru DOM
+    if (!upperContainer || !lowerContainer) {
+        console.error("[Teeth Error] Containerele teeth-upper sau teeth-lower lipsesc din HTML!");
+        return;
+    }
+
+    // Creăm un obiect gol implicit - dacă serverul dă eroare, pornim cu harta goală (toți dinții gri)
+    let eruptedData = {}; 
 
     try {
+        // Încercăm să luăm datele de la server
         const res = await fetch(`api/teeth.php?child_id=${selectedChildId}`);
-        const eruptedData = await res.json(); 
-
-        // Generăm 10 dinți pentru arcada de sus și 10 pentru jos
-        renderTeethArch(upperContainer, 'U', eruptedData);
-        renderTeethArch(lowerContainer, 'L', eruptedData);
         
+        if (res.ok) {
+            const textData = await res.text();
+            // Validăm dacă am primit un JSON curat înainte de a-l parsa
+            if (textData && (textData.startsWith('{') || textData.startsWith('['))) {
+                eruptedData = JSON.parse(textData);
+            }
+        }
     } catch (e) {
-        console.error("[Teeth] Eroare la preluarea datelor:", e);
+        // Dacă teeth.php e stricat sau baza de date dă eroare, prindem eroarea aici
+        console.warn("[Teeth Emergency Recovery] Serverul a dat eroare, dar desenăm harta oricum:", e);
     }
-}
 
+    // Indiferent ce s-a întâmplat mai sus, rulăm desenarea dinților!
+    renderTeethArch(upperContainer, 'U', eruptedData);
+    renderTeethArch(lowerContainer, 'L', eruptedData);
+}
 /**
  * Creează elementele DOM pentru o arcadă dentară.
  * * @param {HTMLElement} container - Div-ul unde se randează.
  * @param {string} prefix - 'U' pentru Upper, 'L' pentru Lower.
  * @param {object} data - Obiectul cu dinții deja ieșiți.
  */
-/**
- * Creează elementele DOM pentru o arcadă dentară.
- * FIX: S-a corectat variabila de verificare pentru a randa dinții corect.
- * * @param {HTMLElement} container - Div-ul unde se randează.
- * @param {string} prefix - 'U' pentru Upper, 'L' pentru Lower.
- * @param {object} data - Obiectul cu dinții deja ieșiți.
- 
+
 function renderTeethArch(container, prefix, data) {
     container.innerHTML = '';
     
