@@ -640,9 +640,28 @@ function showRegisterFields() {
     const fullNameInput = document.getElementById('auth-fullname');
     const authTitle = document.getElementById('auth-title');
     
+    // Preluăm butoanele din HTML pentru a le schimba dinamic acțiunea
+    const loginBtn = document.getElementById('btn-login-action') || document.querySelector("button[onclick*='login']");
+    const toggleBtn = document.getElementById('btn-toggle-mode') || document.querySelector("button[onclick*='showRegisterFields']");
+    const registerBtn = document.getElementById('btn-register-action');
+    
     if (termsContainer && fullNameInput) {
         termsContainer.style.display = 'block';
         fullNameInput.style.display = 'block';
+        
+        // --- LOGICĂ NOUĂ DE INTERFAȚĂ PENTRU BUTOANE ---
+        if (registerBtn) {
+            // Dacă ai adăugat deja butonul dedicat în HTML, îl afișăm pe acela și le ascundem pe celelalte
+            registerBtn.style.display = 'block';
+            if (loginBtn) loginBtn.style.display = 'none';
+            if (toggleBtn) toggleBtn.style.display = 'none';
+        } else if (loginBtn) {
+            // DUPĂ PLANUL B: Dacă nu ai butonul nou în HTML, îl transformăm direct pe cel de Conectare
+            loginBtn.innerText = "Creează Cont 🚀";
+            // Îi schimbăm evenimentul de click direct din JS să execute register în loc de login
+            loginBtn.setAttribute("onclick", "handleAuth('register')");
+            if (toggleBtn) toggleBtn.style.display = 'none';
+        }
         
         if (authTitle) {
             authTitle.innerText = "👶 Creează un cont nou în LittleSteps";
@@ -688,8 +707,8 @@ async function handleAuth(action) {
             if (action === 'login') {
                 finalizeLogin(result.user);
             } else {
-                alert("Contul a fost creat! Vă rugăm să vă conectați.");
-                // Resetăm interfața înapoi la login pentru utilizator
+                alert("Contul a fost creat! Vă rugăm să vă conectați utilizând noile date.");
+                // Resetăm interfața înapoi la login curat pentru utilizator ca să se poată conecta
                 location.reload();
             }
         } else {
@@ -698,6 +717,30 @@ async function handleAuth(action) {
     } catch (err) {
         console.error("[Auth] Eroare de rețea:", err);
     }
+}
+
+/**
+ * Finalizează procesul de login și deschide dashboard-ul.
+ */
+function finalizeLogin(user) {
+    const overlay = document.getElementById('auth-overlay');
+    if (overlay) overlay.style.display = 'none';
+    
+    const displayUser = document.getElementById('display-user');
+    if (displayUser) {
+        displayUser.innerText = user.fullname || user.email;
+    }
+    
+    // Verificăm drepturile de administrator
+    const adminTab = document.getElementById('menu-admin');
+    if (adminTab) {
+        adminTab.style.display = (user.role === 'admin') ? 'block' : 'none';
+    }
+
+    console.log(`[Auth] Bine ai venit, ${user.email}!`);
+    
+    loadFamilyData();
+    loadTimeline();
 }
 
 /**
