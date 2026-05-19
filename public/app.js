@@ -635,6 +635,24 @@ async function saveFamilyMember(type) {
 /**
  * Procesează cererile de Login sau Register.
  */
+function showRegisterFields() {
+    const termsContainer = document.getElementById('register-terms-container');
+    const fullNameInput = document.getElementById('auth-fullname');
+    const authTitle = document.getElementById('auth-title');
+    
+    // Verificăm dacă elementele există în DOM înainte de a le schimba starea
+    if (termsContainer && fullNameInput) {
+        termsContainer.style.display = 'block';
+        fullNameInput.style.display = 'block';
+        
+        // Actualizăm titlul cardului pentru a ghida utilizatorul
+        if (authTitle) {
+            authTitle.innerText = "👶 Creează un cont nou în LittleSteps";
+        }
+        
+        console.log("[Auth UI] Formularul a fost configurat pentru modul de Înregistrare.");
+    }
+}
 async function handleAuth(action) {
     const email = document.getElementById('auth-email').value;
     const password = document.getElementById('auth-password').value;
