@@ -26,8 +26,11 @@
                 </div>
 
                 <div class="auth-buttons" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px; width: 100%;">
-                    <button type="button" onclick="handleAuth('login')" style="width: 100%; padding: 12px; font-weight: bold; font-size: 1rem;">Conectare</button>
-                    <button type="button" class="btn-alt" onclick="showRegisterFields()" style="width: 100%; padding: 12px; font-size: 1rem;">Cont Nou</button>
+                    <button type="button" id="btn-login-action" onclick="handleAuth('login')" style="width: 100%; padding: 12px; font-weight: bold; font-size: 1rem;">Conectare</button>
+                    
+                    <button type="button" id="btn-register-action" onclick="handleAuth('register')" style="display: none; width: 100%; padding: 12px; font-weight: bold; font-size: 1rem; background-color: var(--success); color: white;">Creează Cont 🚀</button>
+                    
+                    <button type="button" id="btn-toggle-mode" class="btn-alt" onclick="showRegisterFields()" style="width: 100%; padding: 12px; font-size: 1rem;">Cont Nou</button>
                 </div>
             </form>
         </div>
