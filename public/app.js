@@ -17,7 +17,7 @@
  * - Monitorizare Dentiție (Interfață interactivă)
  * - Monitorizare Scutece (Umed/Murdar/Ambele)
  * - Cronometru somn în timp real
- * * =============================================================================
+ * =============================================================================
  */
 
 
@@ -456,7 +456,7 @@ function renderTeethArch(container, prefix, data) {
         const eruptionDate = data[toothId] || null;
         
         const toothDiv = document.createElement('div');
-        toothDiv.className = `tooth ${eruptionDate ? 'erupted' : ''}`;
+        toothDiv.className = `tooth ${erosionDate ? 'erupted' : ''}`;
         toothDiv.innerHTML = i;
         
         // Atribuim evenimentul de click
@@ -473,7 +473,7 @@ function renderTeethArch(container, prefix, data) {
  */
 async function handleToothClick(id, date) {
     if (date) {
-        alert(`Acest dințișor a erupt la data de: ${date}`);
+        alert(`Acest dințișor a apărut la data de: ${date}`);
         return;
     }
     
@@ -633,19 +633,17 @@ async function saveFamilyMember(type) {
  */
 
 /**
- * Procesează cererile de Login sau Register.
+ * Pregătește interfața pentru modul de înregistrare cont nou.
  */
 function showRegisterFields() {
     const termsContainer = document.getElementById('register-terms-container');
     const fullNameInput = document.getElementById('auth-fullname');
     const authTitle = document.getElementById('auth-title');
     
-    // Verificăm dacă elementele există în DOM înainte de a le schimba starea
     if (termsContainer && fullNameInput) {
         termsContainer.style.display = 'block';
         fullNameInput.style.display = 'block';
         
-        // Actualizăm titlul cardului pentru a ghida utilizatorul
         if (authTitle) {
             authTitle.innerText = "👶 Creează un cont nou în LittleSteps";
         }
@@ -653,14 +651,28 @@ function showRegisterFields() {
         console.log("[Auth UI] Formularul a fost configurat pentru modul de Înregistrare.");
     }
 }
+
+/**
+ * Procesează cererile de Login sau Register.
+ * MODIFICAT: Separă logica butonului și validează corect bifa GDPR doar la register.
+ */
 async function handleAuth(action) {
     const email = document.getElementById('auth-email').value;
     const password = document.getElementById('auth-password').value;
     const fullNameField = document.getElementById('auth-fullname');
     const fullName = fullNameField ? fullNameField.value : "";
+    const termsCheckbox = document.getElementById('auth-terms');
 
+    // Validare primară elemente obligatorii
     if (!email || !password) {
         return alert("Vă rugăm să introduceți atât emailul cât și parola.");
+    }
+
+    // --- PROTECȚIE ȘI VALIDARE STRICTĂ GDPR LA ÎNREGISTRARE ---
+    if (action === 'register') {
+        if (!termsCheckbox || !termsCheckbox.checked) {
+            return alert("Trebuie să fii de acord cu termenii și condițiile (bifează căsuța GDPR) pentru a crea contul.");
+        }
     }
 
     try {
@@ -677,6 +689,8 @@ async function handleAuth(action) {
                 finalizeLogin(result.user);
             } else {
                 alert("Contul a fost creat! Vă rugăm să vă conectați.");
+                // Resetăm interfața înapoi la login pentru utilizator
+                location.reload();
             }
         } else {
             alert("Eroare: " + (result.error || "A apărut o problemă la server."));
@@ -756,7 +770,7 @@ async function loadTimeline() {
     
     timelineList.innerHTML = '<p class="placeholder-text">Se procesează fluxul de date pentru data selectată...</p>';
 
-    // Funcție internă de protecție pentru fetch (Bulletproof JSON)
+    // Funcție interna de protecție pentru fetch (Bulletproof JSON)
     const safeFetch = async (url) => {
         try {
             const r = await fetch(url);
@@ -779,15 +793,22 @@ async function loadTimeline() {
             safeFetch(`api/diaper.php?child_id=${selectedChildId}`)
         ]);
 
+        const feedingData = feeding;
+        const sleepData = sleep;
+        const medicalData = medical;
+        const mediaData = media;
+        const evolutionData = evolution;
+        const diaperData = diaper;
+
         // Combinăm totul într-un tablou brut (Data Flatting)
         let rawEvents = [
-            ...feeding.map(f => ({ ...f, icon: '🍼', title: `Hrană: ${f.type}`, date: f.created_at })),
-            ...sleep.map(s => ({ ...s, icon: '😴', title: 'Somn', date: s.created_at })),
-            ...medical.map(m => ({ ...m, icon: '🏥', title: `Medical: ${m.diagnosis}`, date: m.event_date, isDateOnly: true })),
-            ...media.map(i => ({ ...i, icon: '🖼️', title: 'Imagine', date: i.created_at, isMedia: true })),
-            ...diaper.map(d => ({ ...d, icon: '🧷', title: `Scutec: ${d.type}`, date: d.created_at })),
-            ...(evolution.growth || []).map(g => ({ icon: '📏', title: 'Creștere', details: `⚖️ ${g.weight}kg | 📏 ${g.height}cm`, date: g.recorded_date, isDateOnly: true })),
-            ...(evolution.milestones || []).map(m => ({ icon: '🏆', title: `Reper: ${m.milestone_name}`, details: 'Bifat!', date: m.milestone_date, isDateOnly: true }))
+            ...feedingData.map(f => ({ ...f, icon: '🍼', title: `Hrană: ${f.type}`, date: f.created_at })),
+            ...sleepData.map(s => ({ ...s, icon: '😴', title: 'Somn', date: s.created_at })),
+            ...medicalData.map(m => ({ ...m, icon: '🏥', title: `Medical: ${m.diagnosis}`, date: m.event_date, isDateOnly: true })),
+            ...mediaData.map(i => ({ ...i, icon: '🖼️', title: 'Imagine', date: i.created_at, isMedia: true })),
+            ...diaperData.map(d => ({ ...d, icon: '🧷', title: `Scutec: ${d.type}`, date: d.created_at })),
+            ...(evolutionData.growth || []).map(g => ({ icon: '📏', title: 'Creștere', details: `⚖️ ${g.weight}kg | 📏 ${g.height}cm`, date: g.recorded_date, isDateOnly: true })),
+            ...(evolutionData.milestones || []).map(m => ({ icon: '🏆', title: `Reper: ${m.milestone_name}`, details: 'Bifat!', date: m.milestone_date, isDateOnly: true }))
         ];
 
         // --- LOGICĂ FILTRARE CALENDAR ---

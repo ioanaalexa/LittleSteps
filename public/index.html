@@ -10,24 +10,24 @@
 <body>
 
     <div id="auth-overlay" class="auth-overlay">
-        <div class="auth-card">
+        <div class="auth-card" style="max-width: 420px; padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); box-sizing: border-box;">
             <h2 id="auth-title">👶 Bun venit la LittleSteps</h2>
             <p>Gestionați evoluția copilului dumneavoastră</p>
-            <form id="auth-form">
-                <input type="email" id="auth-email" placeholder="Email" required>
-                <input type="password" id="auth-password" placeholder="Parolă" required>
-                <input type="text" id="auth-fullname" placeholder="Nume Complet (doar la înregistrare)">
+            <form id="auth-form" style="width: 100%; display: flex; flex-direction: column; gap: 4px;">
+                <input type="email" id="auth-email" placeholder="Email" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+                <input type="password" id="auth-password" placeholder="Parolă" required style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
+                <input type="text" id="auth-fullname" placeholder="Nume Complet (doar la înregistrare)" style="width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 1rem; box-sizing: border-box;">
                 
-                <div id="register-terms-container" style="margin-top: 15px; text-align: left; display: none;">
-                    <label style="font-size: 0.8rem; cursor: pointer; display: flex; align-items: flex-start; gap: 8px; color: var(--text);">
-                        <input type="checkbox" id="auth-terms" style="margin-top: 3px;">
+                <div id="register-terms-container" style="margin-top: 10px; margin-bottom: 10px; text-align: left; display: none; background: rgba(0,0,0,0.02); padding: 10px; border-radius: 8px; border: 1px solid #eee; box-sizing: border-box;">
+                    <label style="font-size: 0.78rem; cursor: pointer; display: flex; align-items: flex-start; gap: 8px; color: #333; line-height: 1.4;">
+                        <input type="checkbox" id="auth-terms" style="margin-top: 2px;">
                         <span>Sunt de acord cu prelucrarea datelor și utilizarea cookie-urilor conform Politicii de Confidențialitate LittleSteps.</span>
                     </label>
                 </div>
 
-                <div class="auth-buttons">
-                    <button type="button" onclick="handleAuth('login')">Conectare</button>
-                    <button type="button" class="btn-alt" onclick="showRegisterFields()">Cont Nou</button>
+                <div class="auth-buttons" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px; width: 100%;">
+                    <button type="button" onclick="handleAuth('login')" style="width: 100%; padding: 12px; font-weight: bold; font-size: 1rem;">Conectare</button>
+                    <button type="button" class="btn-alt" onclick="showRegisterFields()" style="width: 100%; padding: 12px; font-size: 1rem;">Cont Nou</button>
                 </div>
             </form>
         </div>
