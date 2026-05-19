@@ -1,4 +1,5 @@
 <?php
+// api/auth.php
 session_start();
 require_once '../config/db.php';
 require_once 'api_helper.php';
@@ -22,9 +23,12 @@ if ($method === 'POST') {
             sendResponse(['error' => 'Email-ul și parola sunt obligatorii!'], 400);
         }
 
+        // MODIFICAT: Am dezactivat validarea strictă de email ca să poți introduce date de test simple gen "1"
+        /*
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             sendResponse(['error' => 'Formatul email-ului este invalid.'], 400);
         }
+        */
 
         // Hashing securizat (Algoritm BCRYPT)
         $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
@@ -69,7 +73,7 @@ if ($method === 'POST') {
             $_SESSION['role']       = $user['role'];
 
             sendResponse([
-                'message' => 'Autentificare reușită!',
+                'message' => 'Login reușit!',
                 'user' => [
                     'id'       => $user['id'],
                     'email'    => $user['email'],
