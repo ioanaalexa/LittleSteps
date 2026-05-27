@@ -464,7 +464,7 @@ async function loadTeeth() {
  */
 
 function renderTeethArch(container, prefix, data) {
-    container.innerHTML = '';
+    container.innerHTML = '';   
     
     for (let i = 1; i <= 10; i++) {
         const toothId = `${prefix}-${i}`;
