@@ -456,13 +456,13 @@ async function loadTeeth() {
     renderTeethArch(upperContainer, 'U', eruptedData);
     renderTeethArch(lowerContainer, 'L', eruptedData);
 }
+
 /**
  * Creează elementele DOM pentru o arcadă dentară.
  * * @param {HTMLElement} container - Div-ul unde se randează.
  * @param {string} prefix - 'U' pentru Upper, 'L' pentru Lower.
  * @param {object} data - Obiectul cu dinții deja ieșiți.
  */
-
 function renderTeethArch(container, prefix, data) {
     container.innerHTML = '';   
     
@@ -482,6 +482,49 @@ function renderTeethArch(container, prefix, data) {
     }
 }
 
+/**
+ * Gestionează interacțiunea la click pe un dinte.
+ * REPARAT: Formatare robustă pentru data locală pentru a preveni erorile de validare în PHP.
+ */
+async function handleToothClick(id, date) {
+    if (date) {
+        alert(`Acest dințișor a apărut la data de: ${date}`);
+        return;
+    }
+    
+    // Generăm data locală corectă (An-Lună-Zi) fără decalaj de fus orar UTC
+    const localNow = new Date();
+    const localYear = localNow.getFullYear();
+    const localMonth = String(localNow.getMonth() + 1).padStart(2, '0');
+    const localDay = String(localNow.getDate()).padStart(2, '0');
+    const defaultLocalDate = `${localYear}-${localMonth}-${localDay}`;
+    
+    const inputDate = prompt("Introduceți data apariției dințișorului (YYYY-MM-DD):", defaultLocalDate);
+    
+    if (inputDate) {
+        try {
+            const response = await fetch('api/teeth.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    child_id: parseInt(selectedChildId), 
+                    tooth_id: id, 
+                    date: inputDate 
+                })
+            });
+            
+            if (response.ok) {
+                console.log("[Teeth] Dinte marcat ca erupt cu succes.");
+                await loadTeeth(); 
+            } else {
+                const errResult = await response.json();
+                alert("Eroare server: " + (errResult.error || "Nu s-a putut salva dintele."));
+            }
+        } catch (error) {
+            console.error("[Teeth Error] Salvare eșuată:", error);
+        }
+    }
+}
 /**
  * -----------------------------------------------------------------------------
  * --- GESTIONARE FAMILIE ȘI DATE COPII ---
