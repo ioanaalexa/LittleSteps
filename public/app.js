@@ -756,7 +756,7 @@ function finalizeLogin(user) {
         displayUser.innerText = user.fullname || user.email;
     }
     
-    // Verificăm drepturile de administrator (Global Admin sau Admin pe Familie)
+    // REPARAT: Afișăm panoul de admin atât pentru administratorul global, cât și pentru administratorul de familie
     const adminTab = document.getElementById('menu-admin');
     if (adminTab) {
         adminTab.style.display = (user.role === 'admin' || user.role === 'family_admin') ? 'block' : 'none';
@@ -781,7 +781,7 @@ function finalizeLogin(user) {
         displayUser.innerText = user.fullname || user.email;
     }
     
-    // Verificăm drepturile de administrator (Global Admin sau Admin pe Familie)
+    // REPARAT: Afișăm panoul de admin atât pentru administratorul global, cât și pentru administratorul de familie
     const adminTab = document.getElementById('menu-admin');
     if (adminTab) {
         adminTab.style.display = (user.role === 'admin' || user.role === 'family_admin') ? 'block' : 'none';
