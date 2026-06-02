@@ -1416,20 +1416,14 @@ async function executeUserDeletion(id) {
 
 /**
  * Redirecționează către scriptul de export pentru descărcarea datelor.
- * * @param {string} format - 'json' sau 'csv'.
+ * @param {string} format - 'json' sau 'csv'.
  */
 function exportData(format) {
-    if (!selectedChildId) return alert("Selectați un copil pentru export.");
-    
-    const exportUrl = `api/export.php?format=${format}&child_id=${selectedChildId}`;
-    
-    console.log(`[Export] Se generează fișierul în format: ${format.toUpperCase()}`);
-    
-    // Deschidem în tab nou pentru a declanșa descărcarea
-    window.location.href = exportUrl;
+  if (!selectedChildId) return alert("Selectați un copil pentru export.");
+  const exportUrl = `api/export.php?format=${format}&child_id=${selectedChildId}`;
+  console.log(`[Export] Se generează fișierul în format: ${format.toUpperCase()}`);
+  window.location.href = exportUrl;
 }
-
-
 /**
  * -----------------------------------------------------------------------------
  * --- SECVENȚĂ DE BOOTSTRAP (INITIALIZARE) ---
