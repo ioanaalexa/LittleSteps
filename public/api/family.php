@@ -6,37 +6,50 @@ require_once 'api_helper.php';
 if (!isset($_SESSION['user_id'])) sendResponse(['error' => 'Neautorizat'], 401);
 
 $method = $_SERVER['REQUEST_METHOD'];
+// Preluăm ID-ul familiei din sesiune
+$current_family_id = $_SESSION['family_id'] ?? null;
 
-// LISTARE MEMBRI
+if (!$current_family_id) {
+    sendResponse(['error' => 'Nu s-a detectat ID-ul familiei în sesiune.'], 400);
+}
+
+// LISTARE MEMBRI (FILTRATĂ PE FAMILIE)
 if ($method === 'GET') {
-    // IMPORTANT: Am adăugat 'gender' în SELECT
-    $parents = $pdo->query("SELECT id, fullname, email, role, gender FROM users")->fetchAll();
-    $children = $pdo->query("SELECT id, name, birthday, gender FROM children")->fetchAll();
+    // MODIFICAT: Selectăm DOAR părinții și copiii care aparțin aceleiași familii
+    $stmtParents = $pdo->prepare("SELECT id, fullname, email, role, gender FROM users WHERE family_id = ?");
+    $stmtParents->execute([$current_family_id]);
+    $parents = $stmtParents->fetchAll();
+
+    $stmtChildren = $pdo->prepare("SELECT id, name, birthday, gender FROM children WHERE family_id = ?");
+    $stmtChildren->execute([$current_family_id]);
+    $children = $stmtChildren->fetchAll();
     
     sendResponse(['parents' => $parents, 'children' => $children]);
 }
 
-// ADĂUGARE MEMBRU
+// ADĂUGARE MEMBRU (LEGAT DE FAMILIA CURENTĂ)
 if ($method === 'POST') {
     $data = getJsonInput();
     $type = $data['type']; 
 
     if ($type === 'child') {
-        $stmt = $pdo->prepare("INSERT INTO children (name, birthday, gender) VALUES (?, ?, ?)");
-        $stmt->execute([$data['name'], $data['birthday'], $data['gender']]);
+        // MODIFICAT: Inserăm copilul legat direct de family_id-ul din sesiune
+        $stmt = $pdo->prepare("INSERT INTO children (name, birthday, gender, family_id) VALUES (?, ?, ?, ?)");
+        $stmt->execute([$data['name'], $data['birthday'], $data['gender'], $current_family_id]);
         sendResponse(['message' => 'Copil adăugat!'], 201);
     } 
     
     if ($type === 'parent') {
         $hashedPass = password_hash('familie123', PASSWORD_BCRYPT);
         try {
-            // AICI ERA PROBLEMA: Lipsea 'gender' din lista de coloane și valori
-            $stmt = $pdo->prepare("INSERT INTO users (email, password, fullname, role, gender) VALUES (?, ?, ?, 'user', ?)");
+            // MODIFICAT: Inserăm noul utilizator asociat automat cu aceeași familie (family_id)
+            $stmt = $pdo->prepare("INSERT INTO users (email, password, fullname, role, gender, family_id) VALUES (?, ?, ?, 'user', ?, ?)");
             $stmt->execute([
                 $data['email'], 
                 $hashedPass, 
                 $data['fullname'], 
-                $data['gender'] // Acum salvăm corect M sau F
+                $data['gender'], // Salvează corect M sau F
+                $current_family_id // Legăm ruda de familia curentă
             ]);
             sendResponse(['message' => 'Părinte invitat! Parola: familie123'], 201);
         } catch (Exception $e) {

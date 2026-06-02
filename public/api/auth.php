@@ -34,12 +34,19 @@ if ($method === 'POST') {
         $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
         
         try {
+            // NOU: Creăm automat o familie dedicată pentru acest nou utilizator principal
+            $numeFamilie = !empty($fullname) ? "Familia " . $fullname : "Familia " . $email;
+            $stmtFam = $pdo->prepare("INSERT INTO families (family_name) VALUES (?)");
+            $stmtFam->execute([$numeFamilie]);
+            $newFamilyId = $pdo->lastInsertId(); // Luăm ID-ul familiei proaspăt create
+
             // Verificăm dacă este primul utilizator pentru a-i da rol de ADMIN
             $userCount = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
             $role = ($userCount == 0) ? 'admin' : 'user';
 
-            $stmt = $pdo->prepare("INSERT INTO users (email, password, fullname, role) VALUES (?, ?, ?, ?)");
-            $stmt->execute([$email, $hashedPassword, $fullname, $role]);
+            // MODIFICAT: Adăugăm noul utilizator legat direct de ID-ul familiei sale în coloana family_id
+            $stmt = $pdo->prepare("INSERT INTO users (email, password, fullname, role, family_id) VALUES (?, ?, ?, ?, ?)");
+            $stmt->execute([$email, $hashedPassword, $fullname, $role, $newFamilyId]);
             
             sendResponse(['message' => "Cont creat cu succes! Te poți loga ca $role."], 201);
         } catch (PDOException $e) {
@@ -67,18 +74,20 @@ if ($method === 'POST') {
             session_regenerate_id(true);
 
             // Salvăm informațiile necesare în variabila superglobală $_SESSION
-            $_SESSION['user_id']   = $user['id'];
+            $_SESSION['user_id']    = $user['id'];
             $_SESSION['user_email'] = $user['email'];
             $_SESSION['fullname']   = $user['fullname'];
             $_SESSION['role']       = $user['role'];
+            $_SESSION['family_id']  = $user['family_id']; // NOU: Salvăm ID-ul familiei în sesiune
 
             sendResponse([
                 'message' => 'Login reușit!',
                 'user' => [
-                    'id'       => $user['id'],
-                    'email'    => $user['email'],
-                    'role'     => $user['role'],
-                    'fullname' => $user['fullname']
+                    'id'        => $user['id'],
+                    'email'     => $user['email'],
+                    'role'      => $user['role'],
+                    'fullname'  => $user['fullname'],
+                    'family_id' => $user['family_id'] // NOU: Trimitem și către frontend contextul de familie
                 ]
             ]);
         } else {
@@ -111,10 +120,11 @@ if ($method === 'GET' && $action === 'status') {
         sendResponse([
             'logged_in' => true,
             'user' => [
-                'id'       => $_SESSION['user_id'],
-                'email'    => $_SESSION['user_email'],
-                'fullname' => $_SESSION['fullname'] ?? '',
-                'role'     => $_SESSION['role']
+                'id'        => $_SESSION['user_id'],
+                'email'     => $_SESSION['user_email'],
+                'fullname'  => $_SESSION['fullname'] ?? '',
+                'role'      => $_SESSION['role'],
+                'family_id' => $_SESSION['family_id'] ?? null // NOU: Întoarcem familia curentă la status check
             ]
         ]);
     } else {

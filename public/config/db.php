@@ -1,7 +1,7 @@
 <?php
 /**
  * config/db.php
- * Structura actualizată pentru suport Gen (M/F) și filtrare activități.
+ * Structura actualizată pentru suport Gen (M/F), filtrare activități și Familii Multiple.
  */
 
 try {
@@ -10,8 +10,18 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
+    // =========================================================================
+    // NOU: 0. Tabel pentru Familii (Asigură izolarea utilizatorilor în grupuri)
+    // =========================================================================
+    $pdo->exec("CREATE TABLE IF NOT EXISTS families (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        family_name TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    )");
+
     // 1. Tabel Utilizatori (Părinți/Admini)
     // Am adăugat coloana 'gender' pentru a distinge între 👨 (M) și 👩 (F)
+    // NOU: S-a adăugat coloana 'family_id' pentru a asocia utilizatorul de o familie unică
     $pdo->exec("CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE NOT NULL,
@@ -19,16 +29,19 @@ try {
         fullname TEXT,
         role TEXT DEFAULT 'user', 
         gender TEXT DEFAULT 'M', -- 'M' pentru Masculin, 'F' pentru Feminin
+        family_id INTEGER,       -- ID-ul familiei din care face parte părintele
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
 
     // 2. Tabel Copii (Membrii familiei monitorizați)
     // Coloana 'gender' va determina dacă afișăm 👦 (M) sau 👧 (F)
+    // NOU: S-a adăugat coloana 'family_id' pentru ca acești copii să apară doar în familia lor
     $pdo->exec("CREATE TABLE IF NOT EXISTS children (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
         birthday DATE,
         gender TEXT DEFAULT 'M', -- 'M' sau 'F'
+        family_id INTEGER,       -- ID-ul familiei de care aparține copilul
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
 
@@ -63,23 +76,23 @@ try {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
 
-// Tabel Evoluție (Înălțime/Greutate)
-$pdo->exec("CREATE TABLE IF NOT EXISTS growth (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    child_id INTEGER NOT NULL,
-    weight REAL, -- Greutate în kg
-    height REAL, -- Înălțime în cm
-    recorded_date DATE NOT NULL
-)");
+    // Tabel Evoluție (Înălțime/Greutate)
+    $pdo->exec("CREATE TABLE IF NOT EXISTS growth (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        child_id INTEGER NOT NULL,
+        weight REAL, -- Greutate în kg
+        height REAL, -- Înălțime în cm
+        recorded_date DATE NOT NULL
+    )");
 
-// Tabel Milestones (Momente importante)
-$pdo->exec("CREATE TABLE IF NOT EXISTS milestones (
-    id INTEGER PRIMARY KEY AUTOINCREMENT,
-    child_id INTEGER NOT NULL,
-    milestone_name TEXT NOT NULL,
-    milestone_date DATE NOT NULL,
-    notes TEXT
-)");
+    // Tabel Milestones (Momente importante)
+    $pdo->exec("CREATE TABLE IF NOT EXISTS milestones (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        child_id INTEGER NOT NULL,
+        milestone_name TEXT NOT NULL,
+        milestone_date DATE NOT NULL,
+        notes TEXT
+    )");
 
 } catch (PDOException $e) {
     die("Eroare critică la baza de date: " . $e->getMessage());
