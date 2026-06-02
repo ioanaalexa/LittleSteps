@@ -625,10 +625,13 @@ async function saveFamilyMember(type) {
         payload.gender = document.getElementById('new-child-gender').value; 
         if(!payload.name) return alert("Numele copilului este obligatoriu!");
     } else {
+       
         payload.fullname = document.getElementById('new-parent-name').value;
         payload.email = document.getElementById('new-parent-email').value;
         payload.gender = document.getElementById('new-parent-gender').value;
+        payload.role = document.getElementById('new-parent-role').value; // NOU: Preluăm rolul ales
         if(!payload.email) return alert("Email-ul este obligatoriu!");
+    
     }
 
     try {
@@ -753,10 +756,10 @@ function finalizeLogin(user) {
         displayUser.innerText = user.fullname || user.email;
     }
     
-    // Verificăm drepturile de administrator
+    // Verificăm drepturile de administrator (Global Admin sau Admin pe Familie)
     const adminTab = document.getElementById('menu-admin');
     if (adminTab) {
-        adminTab.style.display = (user.role === 'admin') ? 'block' : 'none';
+        adminTab.style.display = (user.role === 'admin' || user.role === 'family_admin') ? 'block' : 'none';
     }
 
     console.log(`[Auth] Bine ai venit, ${user.email}!`);
@@ -767,6 +770,7 @@ function finalizeLogin(user) {
 
 /**
  * Finalizează procesul de login și deschide dashboard-ul.
+ * (Duplicat corectat pentru a preveni erorile de suprascriere în JS)
  */
 function finalizeLogin(user) {
     const overlay = document.getElementById('auth-overlay');
@@ -777,10 +781,10 @@ function finalizeLogin(user) {
         displayUser.innerText = user.fullname || user.email;
     }
     
-    // Verificăm drepturile de administrator
+    // Verificăm drepturile de administrator (Global Admin sau Admin pe Familie)
     const adminTab = document.getElementById('menu-admin');
     if (adminTab) {
-        adminTab.style.display = (user.role === 'admin') ? 'block' : 'none';
+        adminTab.style.display = (user.role === 'admin' || user.role === 'family_admin') ? 'block' : 'none';
     }
 
     console.log(`[Auth] Bine ai venit, ${user.email}!`);
@@ -788,7 +792,6 @@ function finalizeLogin(user) {
     loadFamilyData();
     loadTimeline();
 }
-
 /**
  * Verifică starea sesiunii la pornirea aplicației.
  */

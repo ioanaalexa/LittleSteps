@@ -226,7 +226,12 @@
                                 <option value="M">Bărbat 👨</option>
                                 <option value="F">Femeie 👩</option>
                             </select>
-                            <button onclick="saveFamilyMember('parent')" class="btn-alt" style="width:100%;">Invită Părinte</button>
+                            <label style="font-size: 0.85rem; color: var(--text-light); display:block; margin-bottom:5px;">Drepturi acces:</label>
+                            <select id="new-parent-role" style="width:100%; margin-bottom:15px; padding:10px; border:1px solid #ddd; border-radius:8px; font-weight: bold;">
+                                <option value="user">Visualizator & Logare (Operator)</option>
+                                <option value="family_admin">Administrator Familie (Are pagină Admin)</option>
+                            </select>
+                            <button onclick="saveFamilyMember('parent')" class="btn-alt" style="width:100%;">Trimite Invitație pe Mail ✉️</button>
                         </div>
                     </div>
                 </div>
