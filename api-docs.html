@@ -1,0 +1,739 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>LittleSteps — Documentație API REST</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0f0f13;
+      --surface: #17171e;
+      --surface2: #1e1e28;
+      --border: #2a2a38;
+      --text: #e2e2f0;
+      --text-muted: #8585a8;
+      --accent: #7c6fff;
+      --accent-pale: rgba(124,111,255,.12);
+      --get: #22c55e; --get-bg: rgba(34,197,94,.12);
+      --post: #3b82f6; --post-bg: rgba(59,130,246,.12);
+      --put: #f59e0b; --put-bg: rgba(245,158,11,.12);
+      --delete: #ef4444; --delete-bg: rgba(239,68,68,.12);
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Inter', sans-serif;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 15px; line-height: 1.6; }
+
+    /* LAYOUT */
+    .shell { display: flex; min-height: 100vh; }
+
+    /* SIDEBAR */
+    .sidebar {
+      width: 260px; flex-shrink: 0; position: sticky; top: 0; height: 100vh;
+      background: var(--surface); border-right: 1px solid var(--border);
+      overflow-y: auto; padding: 0;
+    }
+    .sidebar-logo {
+      padding: 24px 20px 20px;
+      border-bottom: 1px solid var(--border);
+    }
+    .sidebar-logo .brand { font-size: 1.1rem; font-weight: 700; color: var(--accent); letter-spacing: -.02em; }
+    .sidebar-logo .version { font-size: .72rem; font-family: var(--mono); color: var(--text-muted); margin-top: 2px; }
+
+    .nav-group { padding: 20px 16px 8px; }
+    .nav-group-label { font-size: .68rem; font-weight: 700; text-transform: uppercase; letter-spacing: .12em; color: var(--text-muted); margin-bottom: 6px; }
+    .nav-item {
+      display: flex; align-items: center; gap: 8px;
+      padding: 7px 10px; border-radius: 6px; margin-bottom: 2px;
+      font-size: .83rem; color: var(--text-muted); text-decoration: none;
+      transition: all .15s;
+    }
+    .nav-item:hover, .nav-item.active { background: var(--accent-pale); color: var(--accent); }
+    .nav-badge {
+      font-family: var(--mono); font-size: .65rem; font-weight: 700;
+      padding: 1px 6px; border-radius: 4px; flex-shrink: 0;
+    }
+    .nb-get { background: var(--get-bg); color: var(--get); }
+    .nb-post { background: var(--post-bg); color: var(--post); }
+    .nb-put { background: var(--put-bg); color: var(--put); }
+    .nb-del { background: var(--delete-bg); color: var(--delete); }
+
+    /* MAIN */
+    .main { flex: 1; max-width: 860px; padding: 40px 48px 100px; }
+
+    /* HEADER */
+    .page-header {
+      margin-bottom: 48px; padding-bottom: 32px;
+      border-bottom: 1px solid var(--border);
+    }
+    .page-header .tag { font-family: var(--mono); font-size: .72rem; color: var(--accent); letter-spacing: .1em; margin-bottom: 10px; }
+    .page-header h1 { font-size: 2.2rem; font-weight: 700; letter-spacing: -.03em; color: #fff; margin-bottom: 8px; }
+    .page-header p { color: var(--text-muted); font-size: .95rem; max-width: 560px; }
+    .info-chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+    .chip {
+      font-family: var(--mono); font-size: .73rem;
+      background: var(--surface2); border: 1px solid var(--border);
+      color: var(--text-muted); padding: 4px 10px; border-radius: 6px;
+    }
+    .chip span { color: var(--accent); font-weight: 600; }
+
+    /* SECTION HEADING */
+    .api-group { margin-bottom: 48px; scroll-margin-top: 24px; }
+    .group-title {
+      font-size: .72rem; font-weight: 700; text-transform: uppercase;
+      letter-spacing: .14em; color: var(--text-muted); margin-bottom: 16px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .group-title::after { content: ''; flex: 1; height: 1px; background: var(--border); }
+
+    /* ENDPOINT CARD */
+    .endpoint {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 10px; margin-bottom: 14px; overflow: hidden;
+      transition: border-color .2s;
+    }
+    .endpoint:hover { border-color: var(--accent); }
+    .endpoint-header {
+      display: flex; align-items: center; gap: 12px;
+      padding: 16px 20px; cursor: pointer; user-select: none;
+    }
+    .method-badge {
+      font-family: var(--mono); font-size: .72rem; font-weight: 700;
+      padding: 4px 9px; border-radius: 5px; flex-shrink: 0; min-width: 60px; text-align: center;
+    }
+    .mb-get { background: var(--get-bg); color: var(--get); border: 1px solid rgba(34,197,94,.3); }
+    .mb-post { background: var(--post-bg); color: var(--post); border: 1px solid rgba(59,130,246,.3); }
+    .mb-put { background: var(--put-bg); color: var(--put); border: 1px solid rgba(245,158,11,.3); }
+    .mb-delete { background: var(--delete-bg); color: var(--delete); border: 1px solid rgba(239,68,68,.3); }
+
+    .endpoint-path { font-family: var(--mono); font-size: .88rem; color: #fff; flex: 1; }
+    .endpoint-path .param { color: var(--put); }
+    .endpoint-summary { font-size: .82rem; color: var(--text-muted); margin-left: auto; }
+    .chevron { color: var(--text-muted); transition: transform .2s; font-size: .8rem; }
+    .endpoint.open .chevron { transform: rotate(90deg); }
+
+    .endpoint-body { display: none; padding: 0 20px 20px; border-top: 1px solid var(--border); }
+    .endpoint.open .endpoint-body { display: block; }
+
+    .endpoint-desc { color: var(--text-muted); font-size: .88rem; margin: 16px 0 12px; line-height: 1.6; }
+    .auth-tag {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(124,111,255,.15); border: 1px solid rgba(124,111,255,.3);
+      color: var(--accent); font-size: .75rem; font-family: var(--mono);
+      padding: 3px 9px; border-radius: 5px; margin-bottom: 12px;
+    }
+
+    /* PARAMS TABLE */
+    .params-label { font-size: .72rem; font-weight: 700; text-transform: uppercase; letter-spacing: .1em; color: var(--text-muted); margin: 16px 0 8px; }
+    .params-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
+    .params-table th { background: var(--surface2); color: var(--text-muted); padding: 7px 12px; text-align: left; font-weight: 600; font-size: .72rem; text-transform: uppercase; letter-spacing: .08em; }
+    .params-table td { padding: 8px 12px; border-bottom: 1px solid var(--border); vertical-align: top; }
+    .params-table tr:last-child td { border-bottom: none; }
+    .param-name { font-family: var(--mono); color: var(--text); font-size: .83rem; }
+    .param-type { font-family: var(--mono); color: var(--accent); font-size: .77rem; }
+    .param-req { font-size: .72rem; padding: 2px 6px; border-radius: 4px; font-weight: 600; }
+    .req-yes { background: rgba(239,68,68,.15); color: #f87171; }
+    .req-opt { background: var(--surface2); color: var(--text-muted); }
+
+    /* CODE BLOCKS */
+    .code-tabs { margin-top: 14px; }
+    .tab-bar { display: flex; gap: 2px; margin-bottom: -1px; }
+    .tab-btn {
+      font-family: var(--mono); font-size: .73rem; padding: 5px 12px;
+      background: var(--surface2); border: 1px solid var(--border);
+      border-bottom: none; border-radius: 5px 5px 0 0; color: var(--text-muted);
+      cursor: pointer; transition: all .15s;
+    }
+    .tab-btn.active { background: #1e1b4b; color: #c4b5fd; border-color: #312e81; }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+    pre.code-block {
+      background: #1e1b4b; border: 1px solid #312e81;
+      border-radius: 0 8px 8px 8px; padding: 16px 18px;
+      font-family: var(--mono); font-size: .82rem;
+      color: #c4b5fd; overflow-x: auto; line-height: 1.65;
+    }
+    .c-key { color: #a5b4fc; }
+    .c-str { color: #86efac; }
+    .c-num { color: #fde68a; }
+    .c-bool { color: #f9a8d4; }
+    .c-comment { color: #4c4b7a; font-style: italic; }
+    .c-url { color: #67e8f9; }
+
+    /* RESPONSE */
+    .response-header { display: flex; align-items: center; gap: 8px; margin-top: 14px; }
+    .status-badge { font-family: var(--mono); font-size: .75rem; font-weight: 700; padding: 3px 8px; border-radius: 5px; }
+    .s200 { background: var(--get-bg); color: var(--get); }
+    .s201 { background: var(--post-bg); color: var(--post); }
+    .s401 { background: var(--put-bg); color: var(--put); }
+    .s403 { background: var(--delete-bg); color: var(--delete); }
+
+    /* INTRO BOX */
+    .intro-box {
+      background: var(--surface); border: 1px solid var(--border);
+      border-left: 3px solid var(--accent); border-radius: 0 8px 8px 0;
+      padding: 18px 22px; margin-bottom: 32px;
+    }
+    .intro-box p { color: var(--text-muted); font-size: .88rem; line-height: 1.7; }
+    .intro-box p + p { margin-top: 8px; }
+
+    @media (max-width: 800px) {
+      .sidebar { display: none; }
+      .main { padding: 24px 18px 60px; }
+      .endpoint-summary { display: none; }
+    }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+<!-- SIDEBAR -->
+<nav class="sidebar">
+  <div class="sidebar-logo">
+    <div class="brand">LittleSteps API</div>
+    <div class="version">v1.0 · REST · JSON · PHP</div>
+  </div>
+
+  <div class="nav-group">
+    <div class="nav-group-label">Introducere</div>
+    <a class="nav-item active" href="#intro">📖 Prezentare Generală</a>
+    <a class="nav-item" href="#auth-overview">🔑 Autentificare</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">🔐 Auth</div>
+    <a class="nav-item" href="#ep-register"><span class="nav-badge nb-post">POST</span> Register</a>
+    <a class="nav-item" href="#ep-login"><span class="nav-badge nb-post">POST</span> Login</a>
+    <a class="nav-item" href="#ep-logout"><span class="nav-badge nb-post">POST</span> Logout</a>
+    <a class="nav-item" href="#ep-me"><span class="nav-badge nb-get">GET</span> Me</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">🍼 Activități</div>
+    <a class="nav-item" href="#ep-feeding-get"><span class="nav-badge nb-get">GET</span> Feeding</a>
+    <a class="nav-item" href="#ep-feeding-post"><span class="nav-badge nb-post">POST</span> Feeding</a>
+    <a class="nav-item" href="#ep-sleep-get"><span class="nav-badge nb-get">GET</span> Sleep</a>
+    <a class="nav-item" href="#ep-sleep-post"><span class="nav-badge nb-post">POST</span> Sleep</a>
+    <a class="nav-item" href="#ep-diaper"><span class="nav-badge nb-post">POST</span> Diaper</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">🏥 Medical</div>
+    <a class="nav-item" href="#ep-medical-get"><span class="nav-badge nb-get">GET</span> History</a>
+    <a class="nav-item" href="#ep-medical-post"><span class="nav-badge nb-post">POST</span> History</a>
+    <a class="nav-item" href="#ep-growth"><span class="nav-badge nb-post">POST</span> Growth</a>
+    <a class="nav-item" href="#ep-teeth"><span class="nav-badge nb-get">GET</span> Teeth</a>
+    <a class="nav-item" href="#ep-vaccines"><span class="nav-badge nb-get">GET</span> Vaccines</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">📁 Media & Export</div>
+    <a class="nav-item" href="#ep-media-upload"><span class="nav-badge nb-post">POST</span> Upload</a>
+    <a class="nav-item" href="#ep-export-json"><span class="nav-badge nb-get">GET</span> Export JSON</a>
+    <a class="nav-item" href="#ep-export-csv"><span class="nav-badge nb-get">GET</span> Export CSV</a>
+    <a class="nav-item" href="#ep-rss"><span class="nav-badge nb-get">GET</span> RSS Feed</a>
+  </div>
+  <div class="nav-group">
+    <div class="nav-group-label">🛡️ Admin</div>
+    <a class="nav-item" href="#ep-admin-users"><span class="nav-badge nb-get">GET</span> Users</a>
+    <a class="nav-item" href="#ep-admin-delete"><span class="nav-badge nb-del">DEL</span> User</a>
+    <a class="nav-item" href="#ep-family"><span class="nav-badge nb-get">GET</span> Family</a>
+  </div>
+</nav>
+
+<!-- MAIN -->
+<main class="main">
+
+  <header class="page-header" id="intro">
+    <p class="tag">REST API · v1.0 · application/json</p>
+    <h1>LittleSteps API</h1>
+    <p>Documentație completă a interfețelor REST backend pentru aplicația de gestiune pediatrică LittleSteps.</p>
+    <div class="info-chips">
+      <div class="chip">Base URL: <span>/api</span></div>
+      <div class="chip">Format: <span>JSON</span></div>
+      <div class="chip">Auth: <span>PHP Session</span></div>
+      <div class="chip">DB: <span>SQLite 3</span></div>
+      <div class="chip">Versiune: <span>1.0.0</span></div>
+    </div>
+  </header>
+
+  <div class="intro-box" id="auth-overview">
+    <p><strong>Autentificare prin Sesiuni PHP:</strong> După apelul <code>POST /api/auth.php?action=login</code>, serverul inițializează o sesiune PHP securizată. Cookie-ul de sesiune (<code>PHPSESSID</code>) este trimis automat de browser la toate cererile ulterioare. Nu este necesar niciun header Authorization.</p>
+    <p><strong>Multi-Tenant:</strong> Toate resursele sunt izolate prin <code>family_id</code>, extras din sesiunea utilizatorului autentificat. Nu este posibil accesul cross-family.</p>
+  </div>
+
+  <!-- ── AUTH ── -->
+  <section class="api-group" id="s-auth">
+    <div class="group-title">🔐 Autentificare</div>
+
+    <!-- REGISTER -->
+    <div class="endpoint" id="ep-register">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge mb-post">POST</span>
+        <span class="endpoint-path">/api/auth.php<span style="color:var(--text-muted)">?action=</span><span style="color:var(--accent)">register</span></span>
+        <span class="endpoint-summary">Creare cont nou</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Creează un cont nou în sistem. <strong>Primul utilizator înregistrat</strong> primește automat rolul <code>admin</code>; toți utilizatorii următori primesc rolul <code>member</code>.</p>
+        <div class="params-label">Request Body (JSON)</div>
+        <table class="params-table">
+          <thead><tr><th>Câmp</th><th>Tip</th><th>Obligatoriu</th><th>Descriere</th></tr></thead>
+          <tbody>
+            <tr><td class="param-name">email</td><td class="param-type">string</td><td><span class="param-req req-yes">DA</span></td><td style="color:var(--text-muted)">Adresa de email — identificator unic în sistem</td></tr>
+            <tr><td class="param-name">password</td><td class="param-type">string</td><td><span class="param-req req-yes">DA</span></td><td style="color:var(--text-muted)">Parola în text clar — stocată ca hash BCRYPT</td></tr>
+            <tr><td class="param-name">fullname</td><td class="param-type">string</td><td><span class="param-req req-yes">DA</span></td><td style="color:var(--text-muted)">Numele complet al utilizatorului</td></tr>
+          </tbody>
+        </table>
+        <div class="code-tabs">
+          <div class="tab-bar">
+            <button class="tab-btn active" onclick="switchTab(this,'req','t-reg')">Request</button>
+            <button class="tab-btn" onclick="switchTab(this,'res200','t-reg')">200 OK</button>
+          </div>
+          <div class="tab-pane active" id="req-t-reg">
+<pre class="code-block">{
+  <span class="c-key">"email"</span>:    <span class="c-str">"ioana@example.com"</span>,
+  <span class="c-key">"password"</span>: <span class="c-str">"parola_securizata"</span>,
+  <span class="c-key">"fullname"</span>: <span class="c-str">"Alexa Ioana"</span>
+}</pre>
+          </div>
+          <div class="tab-pane" id="res200-t-reg">
+<pre class="code-block"><span class="c-comment">// HTTP 201 Created</span>
+{
+  <span class="c-key">"success"</span>: <span class="c-bool">true</span>,
+  <span class="c-key">"user_id"</span>: <span class="c-num">1</span>,
+  <span class="c-key">"role"</span>:    <span class="c-str">"admin"</span>,
+  <span class="c-key">"message"</span>: <span class="c-str">"Cont creat cu succes"</span>
+}</pre>
+          </div>
+        </div>
+        <div class="response-header"><span class="status-badge s201">201</span><span style="color:var(--text-muted);font-size:.82rem">Cont creat — sesiune inițializată automat</span></div>
+        <div class="response-header"><span class="status-badge s401">409</span><span style="color:var(--text-muted);font-size:.82rem">Email deja înregistrat în sistem</span></div>
+      </div>
+    </div>
+
+    <!-- LOGIN -->
+    <div class="endpoint" id="ep-login">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge mb-post">POST</span>
+        <span class="endpoint-path">/api/auth.php<span style="color:var(--text-muted)">?action=</span><span style="color:var(--accent)">login</span></span>
+        <span class="endpoint-summary">Autentificare</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Autentifică utilizatorul și inițializează o sesiune PHP securizată. Parola este verificată cu <code>password_verify()</code> față de hash-ul BCRYPT stocat.</p>
+        <div class="code-tabs">
+          <div class="tab-bar"><button class="tab-btn active" onclick="switchTab(this,'req','t-login')">Request</button><button class="tab-btn" onclick="switchTab(this,'res200','t-login')">200 OK</button></div>
+          <div class="tab-pane active" id="req-t-login">
+<pre class="code-block">{
+  <span class="c-key">"email"</span>:    <span class="c-str">"ioana@example.com"</span>,
+  <span class="c-key">"password"</span>: <span class="c-str">"parola_securizata"</span>
+}</pre></div>
+          <div class="tab-pane" id="res200-t-login">
+<pre class="code-block"><span class="c-comment">// HTTP 200 OK</span>
+{
+  <span class="c-key">"success"</span>:   <span class="c-bool">true</span>,
+  <span class="c-key">"user_id"</span>:   <span class="c-num">1</span>,
+  <span class="c-key">"role"</span>:      <span class="c-str">"admin"</span>,
+  <span class="c-key">"fullname"</span>:  <span class="c-str">"Alexa Ioana"</span>,
+  <span class="c-key">"family_id"</span>: <span class="c-num">1</span>
+}</pre></div>
+        </div>
+        <div class="response-header"><span class="status-badge s200">200</span><span style="color:var(--text-muted);font-size:.82rem">Sesiune creată · Cookie PHPSESSID setat</span></div>
+        <div class="response-header"><span class="status-badge s401">401</span><span style="color:var(--text-muted);font-size:.82rem">Credențiale invalide</span></div>
+      </div>
+    </div>
+
+    <!-- LOGOUT -->
+    <div class="endpoint" id="ep-logout">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge mb-post">POST</span>
+        <span class="endpoint-path">/api/auth.php<span style="color:var(--text-muted)">?action=</span><span style="color:var(--accent)">logout</span></span>
+        <span class="endpoint-summary">Deconectare</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Distruge sesiunea PHP curentă și invalidează cookie-ul <code>PHPSESSID</code>.</p>
+        <div class="response-header"><span class="status-badge s200">200</span><span style="color:var(--text-muted);font-size:.82rem">Sesiune distrusă · utilizator deconectat</span></div>
+      </div>
+    </div>
+
+    <!-- ME -->
+    <div class="endpoint" id="ep-me">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge mb-get">GET</span>
+        <span class="endpoint-path">/api/auth.php<span style="color:var(--text-muted)">?action=</span><span style="color:var(--accent)">me</span></span>
+        <span class="endpoint-summary">Profil curent</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Returnează datele utilizatorului autentificat curent, extrase din sesiunea activă.</p>
+        <span class="auth-tag">🔒 Necesită sesiune activă</span>
+        <div class="response-header"><span class="status-badge s200">200</span><span style="color:var(--text-muted);font-size:.82rem">{ user_id, email, fullname, role, family_id }</span></div>
+        <div class="response-header"><span class="status-badge s401">401</span><span style="color:var(--text-muted);font-size:.82rem">Sesiune inactivă sau expirată</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ACTIVITIES ── -->
+  <section class="api-group" id="s-activities">
+    <div class="group-title">🍼 Activități (Timeline Jurnal)</div>
+
+    <div class="endpoint" id="ep-feeding-get">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge mb-get">GET</span>
+        <span class="endpoint-path">/api/feeding.php</span>
+        <span class="endpoint-summary">Listă mese</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <span class="auth-tag">🔒 Necesită sesiune activă</span>
+        <p class="endpoint-desc">Returnează toate mesele înregistrate pentru copilul activ curent (<code>child_id</code> din sesiune), ordonate descrescător după dată.</p>
+        <div class="code-tabs">
+          <div class="tab-bar"><button class="tab-btn active" onclick="switchTab(this,'res200','t-fget')">200 OK</button></div>
+          <div class="tab-pane active" id="res200-t-fget">
+<pre class="code-block">[
+  {
+    <span class="c-key">"id"</span>:          <span class="c-num">42</span>,
+    <span class="c-key">"category"</span>:    <span class="c-str">"feeding"</span>,
+    <span class="c-key">"type"</span>:        <span class="c-str">"breast"</span>,
+    <span class="c-key">"details"</span>:     <span class="c-str">"Alăptat 15 min stânga"</span>,
+    <span class="c-key">"created_at"</span>:  <span class="c-str">"2026-06-01 08:30:00"</span>
+  }
+]</pre></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint" id="ep-feeding-post">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge mb-post">POST</span>
+        <span class="endpoint-path">/api/feeding.php</span>
+        <span class="endpoint-summary">Adaugă masă</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <span class="auth-tag">🔒 Necesită sesiune activă</span>
+        <p class="endpoint-desc">Înregistrează un nou eveniment de alimentație în timeline.</p>
+        <div class="code-tabs">
+          <div class="tab-bar"><button class="tab-btn active" onclick="switchTab(this,'req','t-fpost')">Request</button></div>
+          <div class="tab-pane active" id="req-t-fpost">
+<pre class="code-block">{
+  <span class="c-key">"type"</span>:    <span class="c-str">"breast"</span>, <span class="c-comment">// "breast" | "formula" | "solid"</span>
+  <span class="c-key">"details"</span>: <span class="c-str">"Alăptat 15 min, sân stâng"</span>
+}</pre></div>
+        </div>
+        <div class="response-header"><span class="status-badge s201">201</span><span style="color:var(--text-muted);font-size:.82rem">{ success: true, id: 43 }</span></div>
+      </div>
+    </div>
+
+    <div class="endpoint" id="ep-sleep-get">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge mb-get">GET</span>
+        <span class="endpoint-path">/api/sleep.php</span>
+        <span class="endpoint-summary">Listă somn</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <span class="auth-tag">🔒 Necesită sesiune activă</span>
+        <p class="endpoint-desc">Returnează toate evenimentele de somn pentru copilul activ.</p>
+        <div class="response-header"><span class="status-badge s200">200</span><span style="color:var(--text-muted);font-size:.82rem">Array cu evenimentele de somn</span></div>
+      </div>
+    </div>
+
+    <div class="endpoint" id="ep-sleep-post">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge mb-post">POST</span>
+        <span class="endpoint-path">/api/sleep.php</span>
+        <span class="endpoint-summary">Înregistrează somn</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <span class="auth-tag">🔒 Necesită sesiune activă</span>
+        <p class="endpoint-desc">Salvează un eveniment de somn. Durata este calculată în frontend din diferența de timestamp și transmisă în câmpul <code>details</code>.</p>
+        <div class="code-tabs">
+          <div class="tab-bar"><button class="tab-btn active" onclick="switchTab(this,'req','t-sleep')">Request</button></div>
+          <div class="tab-pane active" id="req-t-sleep">
+<pre class="code-block">{
+  <span class="c-key">"details"</span>: <span class="c-str">"Somn de prânz — 1h 45min"</span>,
+  <span class="c-key">"duration_minutes"</span>: <span class="c-num">105</span>
+}</pre></div>
+        </div>
+        <div class="response-header"><span class="status-badge s201">201</span><span style="color:var(--text-muted);font-size:.82rem">{ success: true, id: 17 }</span></div>
+      </div>
+    </div>
+
+    <div class="endpoint" id="ep-diaper">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge mb-post">POST</span>
+        <span class="endpoint-path">/api/diaper.php</span>
+        <span class="endpoint-summary">Schimb scutec</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <span class="auth-tag">🔒 Necesită sesiune activă</span>
+        <p class="endpoint-desc">Înregistrează un eveniment de schimb de scutec.</p>
+        <div class="code-tabs">
+          <div class="tab-bar"><button class="tab-btn active" onclick="switchTab(this,'req','t-diaper')">Request</button></div>
+          <div class="tab-pane active" id="req-t-diaper">
+<pre class="code-block">{
+  <span class="c-key">"type"</span>:    <span class="c-str">"wet"</span>, <span class="c-comment">// "wet" | "dirty" | "both"</span>
+  <span class="c-key">"details"</span>: <span class="c-str">"Normal"</span>
+}</pre></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── MEDICAL ── -->
+  <section class="api-group" id="s-medical">
+    <div class="group-title">🏥 Istoric Medical & Creștere</div>
+
+    <div class="endpoint" id="ep-medical-get">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge mb-get">GET</span>
+        <span class="endpoint-path">/api/medical.php</span>
+        <span class="endpoint-summary">Istoric medical</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <span class="auth-tag">🔒 Necesită sesiune activă</span>
+        <p class="endpoint-desc">Returnează lista completă a consultațiilor și observațiilor medicale pentru copilul activ.</p>
+        <div class="response-header"><span class="status-badge s200">200</span><span style="color:var(--text-muted);font-size:.82rem">Array de înregistrări medicale cu date și descrieri</span></div>
+      </div>
+    </div>
+
+    <div class="endpoint" id="ep-medical-post">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge mb-post">POST</span>
+        <span class="endpoint-path">/api/medical.php</span>
+        <span class="endpoint-summary">Adaugă observație</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <span class="auth-tag">🔒 Necesită sesiune activă</span>
+        <div class="code-tabs">
+          <div class="tab-bar"><button class="tab-btn active" onclick="switchTab(this,'req','t-med')">Request</button></div>
+          <div class="tab-pane active" id="req-t-med">
+<pre class="code-block">{
+  <span class="c-key">"date"</span>:        <span class="c-str">"2026-06-01"</span>,
+  <span class="c-key">"description"</span>: <span class="c-str">"Consultație pediatru, totul bine"</span>,
+  <span class="c-key">"medication"</span>:  <span class="c-str">"Vitamina D 400UI"</span>
+}</pre></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint" id="ep-growth">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge mb-post">POST</span>
+        <span class="endpoint-path">/api/evolution.php</span>
+        <span class="endpoint-summary">Adaugă măsurătoare</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <span class="auth-tag">🔒 Necesită sesiune activă</span>
+        <p class="endpoint-desc">Înregistrează o nouă măsurătoare de creștere. Datele sunt afișate în graficul Chart.js din modulul Evoluție.</p>
+        <div class="code-tabs">
+          <div class="tab-bar"><button class="tab-btn active" onclick="switchTab(this,'req','t-growth')">Request</button></div>
+          <div class="tab-pane active" id="req-t-growth">
+<pre class="code-block">{
+  <span class="c-key">"date"</span>:           <span class="c-str">"2026-06-01"</span>,
+  <span class="c-key">"weight_kg"</span>:      <span class="c-num">5.2</span>,
+  <span class="c-key">"height_cm"</span>:      <span class="c-num">58.5</span>,
+  <span class="c-key">"head_circ_cm"</span>:   <span class="c-num">38.0</span>
+}</pre></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="endpoint" id="ep-teeth">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge mb-get">GET</span>
+        <span class="endpoint-path">/api/teeth.php</span>
+        <span class="endpoint-summary">Dentiție</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <span class="auth-tag">🔒 Necesită sesiune activă</span>
+        <p class="endpoint-desc">Returnează starea dentiției (dinte apărut / în curs) pentru copilul activ.</p>
+        <div class="response-header"><span class="status-badge s200">200</span><span style="color:var(--text-muted);font-size:.82rem">Array cu cele 20 dentiții de lapte și status per dinte</span></div>
+      </div>
+    </div>
+
+    <div class="endpoint" id="ep-vaccines">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge mb-get">GET</span>
+        <span class="endpoint-path">/api/vaccines.php</span>
+        <span class="endpoint-summary">Schema vaccinare</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <span class="auth-tag">🔒 Necesită sesiune activă</span>
+        <p class="endpoint-desc">Returnează schema națională de vaccinare, auto-generată la crearea copilului, cu statusul administrării fiecărui vaccin.</p>
+        <div class="response-header"><span class="status-badge s200">200</span><span style="color:var(--text-muted);font-size:.82rem">Array cu vaccin, data recomandată, data_given (null dacă neadministrat)</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── MEDIA & EXPORT ── -->
+  <section class="api-group" id="s-export">
+    <div class="group-title">📁 Media, Export & Interoperabilitate</div>
+
+    <div class="endpoint" id="ep-media-upload">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge mb-post">POST</span>
+        <span class="endpoint-path">/api/media.php</span>
+        <span class="endpoint-summary">Upload imagine</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <span class="auth-tag">🔒 Necesită sesiune activă</span>
+        <p class="endpoint-desc">Acceptă un upload de fișier imagine (<code>multipart/form-data</code>). Fișierul este stocat fizic în <code>public/assets/uploads/</code> cu un ID unic bazat pe timestamp. Metadata (calea relativă) este salvată în tabela <code>media</code>.</p>
+        <table class="params-table">
+          <thead><tr><th>Câmp Form</th><th>Tip</th><th>Obligatoriu</th><th>Descriere</th></tr></thead>
+          <tbody>
+            <tr><td class="param-name">photo</td><td class="param-type">file</td><td><span class="param-req req-yes">DA</span></td><td style="color:var(--text-muted)">Fișier imagine (jpg/png/gif, max 5MB)</td></tr>
+          </tbody>
+        </table>
+        <div class="response-header"><span class="status-badge s201">201</span><span style="color:var(--text-muted);font-size:.82rem">{ success: true, path: "uploads/16857123.jpg" }</span></div>
+      </div>
+    </div>
+
+    <div class="endpoint" id="ep-export-json">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge mb-get">GET</span>
+        <span class="endpoint-path">/api/export.php<span style="color:var(--text-muted)">?format=</span><span style="color:var(--accent)">json</span></span>
+        <span class="endpoint-summary">Export JSON</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <span class="auth-tag">🔒 Necesită sesiune activă</span>
+        <p class="endpoint-desc">Generează și descarcă un fișier JSON cu toate activitățile copilului activ. Răspunsul este livrat cu <code>Content-Disposition: attachment; filename=littlesteps_export.json</code>.</p>
+        <div class="response-header"><span class="status-badge s200">200</span><span style="color:var(--text-muted);font-size:.82rem">application/json · fișier descărcat automat</span></div>
+      </div>
+    </div>
+
+    <div class="endpoint" id="ep-export-csv">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge mb-get">GET</span>
+        <span class="endpoint-path">/api/export.php<span style="color:var(--text-muted)">?format=</span><span style="color:var(--accent)">csv</span></span>
+        <span class="endpoint-summary">Export CSV</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <span class="auth-tag">🔒 Necesită sesiune activă</span>
+        <p class="endpoint-desc">Generează un fișier CSV tabelar cu toate activitățile, deschizibil direct în Excel / Google Sheets.</p>
+        <div class="response-header"><span class="status-badge s200">200</span><span style="color:var(--text-muted);font-size:.82rem">text/csv · fișier descărcat automat</span></div>
+      </div>
+    </div>
+
+    <div class="endpoint" id="ep-rss">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge mb-get">GET</span>
+        <span class="endpoint-path">/api/rss.php</span>
+        <span class="endpoint-summary">Flux RSS 2.0</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <p class="endpoint-desc">Endpoint public care generează un flux RSS 2.0 valid cu ultimele 20 activități. Poate fi consumat de orice agregator de știri. <strong>Nu necesită autentificare</strong> (acces public controlat).</p>
+        <div class="response-header"><span class="status-badge s200">200</span><span style="color:var(--text-muted);font-size:.82rem">application/rss+xml · XML valid RSS 2.0</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ── ADMIN ── -->
+  <section class="api-group" id="s-admin">
+    <div class="group-title">🛡️ Administrare Sistem</div>
+
+    <div class="endpoint" id="ep-admin-users">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge mb-get">GET</span>
+        <span class="endpoint-path">/api/admin.php</span>
+        <span class="endpoint-summary">Toți utilizatorii</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <span class="auth-tag">🔒 Necesită rol admin / family_admin</span>
+        <p class="endpoint-desc">Returnează lista tuturor utilizatorilor din familia curentă, cu rolurile și emailurile asociate. Filtrarea se face automat după <code>family_id</code> din sesiune.</p>
+        <div class="code-tabs">
+          <div class="tab-bar"><button class="tab-btn active" onclick="switchTab(this,'res200','t-adm')">200 OK</button></div>
+          <div class="tab-pane active" id="res200-t-adm">
+<pre class="code-block">[
+  {
+    <span class="c-key">"id"</span>:       <span class="c-num">1</span>,
+    <span class="c-key">"email"</span>:    <span class="c-str">"ioana@example.com"</span>,
+    <span class="c-key">"fullname"</span>: <span class="c-str">"Alexa Ioana"</span>,
+    <span class="c-key">"role"</span>:     <span class="c-str">"admin"</span>
+  }
+]</pre></div>
+        </div>
+        <div class="response-header"><span class="status-badge s403">403</span><span style="color:var(--text-muted);font-size:.82rem">Rol insuficient — acces interzis</span></div>
+      </div>
+    </div>
+
+    <div class="endpoint" id="ep-admin-delete">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge mb-delete">DELETE</span>
+        <span class="endpoint-path">/api/admin.php?id=<span class="param">{userId}</span></span>
+        <span class="endpoint-summary">Șterge utilizator</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <span class="auth-tag">🔒 Necesită rol admin</span>
+        <p class="endpoint-desc">Șterge definitiv un cont de utilizator din baza de date SQLite. Operația este ireversibilă. Adminul nu se poate șterge pe sine însuși.</p>
+        <table class="params-table">
+          <thead><tr><th>Parametru URL</th><th>Tip</th><th>Obligatoriu</th><th>Descriere</th></tr></thead>
+          <tbody><tr><td class="param-name">id</td><td class="param-type">integer</td><td><span class="param-req req-yes">DA</span></td><td style="color:var(--text-muted)">ID-ul utilizatorului de șters</td></tr></tbody>
+        </table>
+        <div class="response-header"><span class="status-badge s200">200</span><span style="color:var(--text-muted);font-size:.82rem">{ success: true, message: "Utilizator șters" }</span></div>
+        <div class="response-header"><span class="status-badge s403">403</span><span style="color:var(--text-muted);font-size:.82rem">Tentativă de auto-ștergere sau rol insuficient</span></div>
+      </div>
+    </div>
+
+    <div class="endpoint" id="ep-family">
+      <div class="endpoint-header" onclick="toggleEndpoint(this)">
+        <span class="method-badge mb-get">GET</span>
+        <span class="endpoint-path">/api/family.php</span>
+        <span class="endpoint-summary">Date familie</span>
+        <span class="chevron">▶</span>
+      </div>
+      <div class="endpoint-body">
+        <span class="auth-tag">🔒 Necesită sesiune activă</span>
+        <p class="endpoint-desc">Returnează membrii familiei curente și copiii înregistrați în sistem, gestionat cu izolare completă Multi-Tenant.</p>
+        <div class="response-header"><span class="status-badge s200">200</span><span style="color:var(--text-muted);font-size:.82rem">{ members: [...], children: [...] }</span></div>
+      </div>
+    </div>
+  </section>
+
+</main>
+</div>
+
+<script>
+function toggleEndpoint(header) {
+  header.parentElement.classList.toggle('open');
+}
+
+function switchTab(btn, paneId, groupId) {
+  const card = btn.closest('.code-tabs');
+  card.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  card.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById(paneId + '-' + groupId).classList.add('active');
+}
+
+// Active nav on scroll
+const anchors = document.querySelectorAll('[id]');
+const navLinks = document.querySelectorAll('.nav-item');
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      navLinks.forEach(l => l.classList.remove('active'));
+      const a = document.querySelector('.nav-item[href="#' + e.target.id + '"]');
+      if (a) a.classList.add('active');
+    }
+  });
+}, { threshold: 0.5 });
+anchors.forEach(a => observer.observe(a));
+</script>
+</body>
+</html>

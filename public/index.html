@@ -244,26 +244,29 @@
                     <div id="vaccine-list" class="vaccine-grid"></div>
                 </div>
             </section>
-
-            <section id="section-export" class="app-section" style="display:none;">
+<section id="section-export" class="app-section" style="display:none;">
                 <div class="card-container export-card">
                     <h3>📊 Rapoarte și Portabilitate</h3>
                     <p>Descarcă istoricul complet în formate deschise sau partajează prin RSS.</p>
-                    <div class="export-actions" style="display: flex; gap: 10px; flex-wrap: wrap;">
+                    
+                    <div class="export-actions" style="display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 25px;">
                         <button onclick="exportData('json')">📥 Descarcă JSON</button>
                         <button onclick="exportData('csv')" class="btn-alt">📥 Descarcă CSV</button>
-                        <a href="../api/rss.php" target="_blank" class="btn-rss" style="text-decoration: none; padding: 10px 20px; background: #e67e22; color: white; border-radius: 8px; display: flex; align-items: center; font-weight: bold;">
+                        <a href="../api/rss.php" target="_blank" class="btn-rss" style="text-decoration: none; padding: 10px 20px; background: #e67e22; color: white; border-radius: 8px; display: inline-flex; align-items: center; font-weight: bold;">
                             🧡 Flux RSS
                         </a>
                     </div>
-                    <div style="margin-top: 25px; padding-top: 15px; border-top: 1px solid #eee;">
-                        <a href="api-docs.html" target="_blank" style="color: var(--primary); font-weight: 600; text-decoration: none; display: flex; align-items: center; gap: 5px;">
-                            📄 Consultă Documentația Tehnică (API REST)
+
+                    <div style="margin-top: 30px; padding-top: 20px; border-top: 2px dashed #eee; display: flex; flex-direction: column; gap: 15px;">
+                        <a href="./scholarly.html" target="_blank" rel="noopener noreferrer" style="color: #6c5ce7; font-weight: 700; text-decoration: underline; font-size: 1.05rem; display: inline-block; cursor: pointer;">
+                            📄 Consultă Raportul Tehnic și Diagrama (Scholarly HTML)
+                        </a>
+                        <a href="./api-docs.html" target="_blank" rel="noopener noreferrer" style="color: #0984e3; font-weight: 700; text-decoration: underline; font-size: 1.05rem; display: inline-block; cursor: pointer;">
+                            ⚙️ Specificații Tehnice Rute Backend (Documentație API REST)
                         </a>
                     </div>
                 </div>
             </section>
-
             <section id="section-admin" class="app-section" style="display:none;">
                 <div class="card-container">
                     <h3>🛡️ Panou Control Administrator</h3>
