@@ -40,9 +40,8 @@ if ($method === 'POST') {
             $stmtFam->execute([$numeFamilie]);
             $newFamilyId = $pdo->lastInsertId(); // Luăm ID-ul familiei proaspăt create
 
-            // Verificăm dacă este primul utilizator pentru a-i da rol de ADMIN
-            $userCount = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
-            $role = ($userCount == 0) ? 'admin' : 'user';
+            // MODIFICAT: Oricine își creează o familie nouă de pe prima pagină devine acum direct Administratorul familiei sale!
+            $role = 'family_admin';
 
             // MODIFICAT: Adăugăm noul utilizator legat direct de ID-ul familiei sale în coloana family_id
             $stmt = $pdo->prepare("INSERT INTO users (email, password, fullname, role, family_id) VALUES (?, ?, ?, ?, ?)");
