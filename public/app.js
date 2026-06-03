@@ -268,7 +268,7 @@ function showSection(sectionName) {
         case 'teeth': loadTeeth(); break;
         case 'gallery': loadGallery(); break;
         case 'admin': loadAdminData(); break;
-        case 'family': loadFamilyData(); break;
+        case 'family': loadFamilyData();loadFriendsData(); break;
         case 'evolution': loadEvolutionData(); break;
     }
 }
@@ -610,6 +610,7 @@ function updateSelectedChild() {
     loadEvolutionData();
     loadVaccines();
     loadTeeth();
+    loadFriendsData();
 }
 
 /**
@@ -1423,6 +1424,72 @@ function exportData(format) {
   const exportUrl = `api/export.php?format=${format}&child_id=${selectedChildId}`;
   console.log(`[Export] Se generează fișierul în format: ${format.toUpperCase()}`);
   window.location.href = exportUrl;
+}
+/**
+ * -----------------------------------------------------------------------------
+ * --- MODUL COMPLEMENTAR: GESTIUNE RELAȚIONARE COPII (CERC SOCIAL) ---
+ * -----------------------------------------------------------------------------
+ */
+
+/**
+ * Salvează o relație nouă cu un alt copil în localStorage
+ */
+function saveFriendRelation() {
+    const name = document.getElementById('friend-name').value;
+    const relation = document.getElementById('friend-relation').value;
+    const details = document.getElementById('friend-details').value || "Fără detalii";
+
+    if (!name) return alert("Vă rugăm să introduceți numele copilului/prietenului!");
+
+    // Preluăm prietenii existenți sau creăm un array gol
+    let friends = JSON.parse(localStorage.getItem('littleStepsFriends')) || [];
+
+    // Adăugăm noul prieten mapat pe copilul activ curent
+    friends.push({
+        childId: selectedChildId,
+        name: name,
+        relation: relation,
+        details: details
+    });
+
+    // Salvăm înapoi în memoria browserului
+    localStorage.setItem('littleStepsFriends', JSON.stringify(friends));
+
+    // Resetăm câmpurile din formular
+    document.getElementById('friend-name').value = "";
+    document.getElementById('friend-details').value = "";
+
+    alert("Relația socială a fost înregistrată cu succes!");
+    loadFriendsData(); // Actualizăm lista vizuală
+}
+
+/**
+ * Încarcă și afișează cercul social în funcție de copilul selectat
+ */
+function loadFriendsData() {
+    const display = document.getElementById('friends-list-display');
+    if (!display) return;
+
+    let friends = JSON.parse(localStorage.getItem('littleStepsFriends')) || [];
+    
+    // Filtrăm prietenii ca să îi arătăm doar pe cei ai copilului selectat curent
+    let currentChildFriends = friends.filter(f => f.childId == selectedChildId);
+
+    let htmlContent = '<h4 class="sub-header" style="margin-top:20px; color: #1abc9c;">👦 Cerc Social & Colegi</h4>';
+
+    if (currentChildFriends.length === 0) {
+        htmlContent += '<p style="font-style: italic; color: #8585a8; font-size: 0.9rem; margin-top: 5px;">Nu au fost adăugate relații sociale pentru acest copil.</p>';
+    } else {
+        currentChildFriends.forEach(f => {
+            htmlContent += `
+                <div class="item family-item" style="border-left: 4px solid #1abc9c; background: #fbfcfc; padding: 10px; margin-bottom: 8px; border-radius: 6px;">
+                    <strong>🤝 ${f.name}</strong> (${f.relation})
+                    <br><small style="color: #7f8c8d;">Locație/Grup: ${f.details}</small>
+                </div>`;
+        });
+    }
+
+    display.innerHTML = htmlContent;
 }
 /**
  * -----------------------------------------------------------------------------
