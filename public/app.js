@@ -3,20 +3,14 @@
  * LITTLESTEPS - APP.JS                          
  * =============================================================================
  * * PROIECT: Sistem de Management și Monitorizare pentru Evoluția Copilului
- * MATERIE: Tehnologii Web / Dezvoltare Aplicații Web
- * AUTOR: Alexa Ioana
+ * MATERIE: Tehnologii Web 
+ * AUTOR: Alexa Ioana & Miron Andrei
  * VERSIUNE: 2.2 (Build: 2026.05.15)
  * * DESCRIERE:
  * Acest fișier conține întreaga logică de frontend a aplicației LittleSteps.
  * Gestionează interacțiunea cu utilizatorul, comunicarea cu API-ul PHP (REST),
  * administrarea cookie-urilor pentru preferințe, randarea graficelor (Chart.js)
  * și procesarea timeline-ului în timp real.
- * * IMPLEMENTĂRI RECENTE:
- * - Sistem de consimțământ Cookie (GDPR Compliance)
- * - Persistență temă (Dark Mode) prin module Cookie
- * - Monitorizare Dentiție (Interfață interactivă)
- * - Monitorizare Scutece (Umed/Murdar/Ambele)
- * - Cronometru somn în timp real
  * =============================================================================
  */
 
@@ -1466,8 +1460,13 @@ function saveFriendRelation() {
 /**
  * Încarcă și afișează cercul social în funcție de copilul selectat
  */
+/**
+ * Încarcă și afișează cercul social în funcție de copilul selectat
+ * MODIFICAT: Se lipește direct în containerul principal existent pentru a evita erorile de DOM!
+ */
 function loadFriendsData() {
-    const display = document.getElementById('friends-list-display');
+    // Căutăm containerul tău sigur care funcționează deja pentru părinți/copii
+    const display = document.getElementById('family-list-display');
     if (!display) return;
 
     let friends = JSON.parse(localStorage.getItem('littleStepsFriends')) || [];
@@ -1475,7 +1474,8 @@ function loadFriendsData() {
     // Filtrăm prietenii ca să îi arătăm doar pe cei ai copilului selectat curent
     let currentChildFriends = friends.filter(f => f.childId == selectedChildId);
 
-    let htmlContent = '<h4 class="sub-header" style="margin-top:20px; color: #1abc9c;">👦 Cerc Social & Colegi</h4>';
+    // Generăm bucata de HTML pentru prieteni
+    let htmlContent = '<h4 class="sub-header" style="margin-top:25px; color: #1abc9c; border-top: 1px dashed #ddd; padding-top: 15px;">👦 Cerc Social & Colegi (Cerinta)</h4>';
 
     if (currentChildFriends.length === 0) {
         htmlContent += '<p style="font-style: italic; color: #8585a8; font-size: 0.9rem; margin-top: 5px;">Nu au fost adăugate relații sociale pentru acest copil.</p>';
@@ -1489,7 +1489,15 @@ function loadFriendsData() {
         });
     }
 
-    display.innerHTML = htmlContent;
+    // ȘMECHERIA: În loc să ștergem părinții, adăugăm prietenii la finalul listei (+=)
+    // Folosim o mică protecție ca să nu se multiplice la nesfârșit textul pe ecran
+    const existingFriendHeader = display.innerHTML.indexOf('Cerc Social &amp; Colegi');
+    if (existingFriendHeader !== -1) {
+        // Dacă deja există pe ecran secțiunea, o curățăm doar pe ea înainte de a o redesena
+        display.innerHTML = display.innerHTML.substring(0, existingFriendHeader);
+    }
+    
+    display.innerHTML += htmlContent;
 }
 /**
  * -----------------------------------------------------------------------------
