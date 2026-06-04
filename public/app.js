@@ -2,10 +2,7 @@
  * =============================================================================
  * LITTLESTEPS - APP.JS                          
  * =============================================================================
- * * PROIECT: Sistem de Management și Monitorizare pentru Evoluția Copilului
- * MATERIE: Tehnologii Web 
  * AUTOR: Alexa Ioana & Miron Andrei
- * VERSIUNE: 2.2 (Build: 2026.05.15)
  * * DESCRIERE:
  * Acest fișier conține întreaga logică de frontend a aplicației LittleSteps.
  * Gestionează interacțiunea cu utilizatorul, comunicarea cu API-ul PHP (REST),
@@ -19,15 +16,15 @@
  * -----------------------------------------------------------------------------
  * --- UTILITARE PENTRU MODULELE COOKIE ---
  * -----------------------------------------------------------------------------
- * Folosim cookie-uri pentru a respecta cerințele de stocare a datelor pe
- * partea de client, accesibile și de către server (PHP).
+ * Folosim cookie-uri pentru a respecta cerintele de stocare a datelor pe
+ * partea de client, accesibile si de catre server (PHP)
  */
 
 /**
- * Setează un cookie în browserul utilizatorului.
- * * @param {string} name - Numele identificatorului pentru cookie.
- * @param {string} value - Valoarea ce urmează a fi stocată.
- * @param {number} days - Numărul de zile până la expirare.
+ * seteaza un cookie in browserul utilizatorului
+ * * @param {string} name - Numele identificatorului pentru cookie
+ * @param {string} value - Valoarea ce urmeaza a fi stocata
+ * @param {number} days - Numarul de zile până la expirare
  */
 function setCookie(name, value, days) {
     const date = new Date();
@@ -88,7 +85,7 @@ let sleepStartTime = localStorage.getItem('sleepStartTime');
 
 /**
  * -----------------------------------------------------------------------------
- * --- SISTEM DARK MODE (PERSISTENȚĂ COOKIE) ---
+ * --- SISTEM DARK MODE ---
  * -----------------------------------------------------------------------------
  */
 
@@ -245,7 +242,7 @@ function showSection(sectionName) {
         gallery: '🖼️ Galerie Multimedia', 
         family: '👪 Membrii Familiei',
         export: '📊 Export & RSS',
-        admin: '🛡️ Administrare Sistem'
+        admin: ' Administrare Sistem'
     };
     
     const titleElement = document.getElementById('section-title');
@@ -332,7 +329,7 @@ function handleSleepTimer() {
         localStorage.removeItem('sleepStartTime');
         
         if (btn) {
-            btn.innerText = "😴 Start Somn";
+            btn.innerText = " Start Somn";
             btn.classList.remove('active');
         }
     }
@@ -368,7 +365,7 @@ function updateSleepUI() {
     const btn = document.getElementById('sleep-timer-btn');
     if (btn && sleepStartTime) {
         btn.classList.add('active');
-        btn.innerText = "🛑 Stop Somn (Sesiune în curs)";
+        btn.innerText = " Stop Somn (Sesiune în curs)";
     }
 }
 
@@ -561,6 +558,10 @@ async function loadFamilyData() {
                 </div>`;
         });
         
+        // --- MODIFICARE STRICTĂ AICI ---
+        // Lăsăm din start zona fixă pentru prieteni la final, ca să nu fie ștearsă de innerHTML
+        htmlContent += '<div id="zona-prieteni-sigura"></div>';
+
         if (listDisplay) {
             listDisplay.innerHTML = htmlContent;
         }
@@ -578,6 +579,10 @@ async function loadFamilyData() {
                 selectedChildId = data.children[0].id;
                 loadTimeline();
             }
+            
+            // --- MODIFICARE STRICTĂ AICI ---
+            // Forțăm încărcarea prietenilor imediat ce s-au afișat părinții/copiii la refresh
+            loadFriendsData();
         } else {
             childSelector.innerHTML = '<option value="">Adăugați un copil...</option>';
         }
@@ -644,8 +649,6 @@ async function saveFamilyMember(type) {
         console.error("[Family Save] Eroare:", e);
     }
 }
-
-
 /**
  * -----------------------------------------------------------------------------
  * --- SISTEM DE AUTENTIFICARE ȘI ACCES ---
@@ -1465,14 +1468,16 @@ function saveFriendRelation() {
  * MODIFICAT: Se lipește direct în containerul principal existent pentru a evita erorile de DOM!
  */
 function loadFriendsData() {
-    // Căutăm containerul tău sigur care funcționează deja pentru părinți/copii
-    const display = document.getElementById('family-list-display');
-    if (!display) return;
+    // Căutăm containerul fix pe care l-am creat în funcția de mai sus
+    const targetZone = document.getElementById('zona-prieteni-sigura');
+    if (!targetZone) return; // Dacă nu s-a încărcat încă lista mare, așteptăm
+
+    if (!selectedChildId) return;
 
     let friends = JSON.parse(localStorage.getItem('littleStepsFriends')) || [];
     
     // Filtrăm prietenii ca să îi arătăm doar pe cei ai copilului selectat curent
-    let currentChildFriends = friends.filter(f => f.childId == selectedChildId);
+    let currentChildFriends = friends.filter(f => String(f.childId) === String(selectedChildId));
 
     // Generăm bucata de HTML pentru prieteni
     let htmlContent = '<h4 class="sub-header" style="margin-top:25px; color: #1abc9c; border-top: 1px dashed #ddd; padding-top: 15px;">👦 Cerc Social & Colegi (Cerinta)</h4>';
@@ -1489,15 +1494,8 @@ function loadFriendsData() {
         });
     }
 
-    // ȘMECHERIA: În loc să ștergem părinții, adăugăm prietenii la finalul listei (+=)
-    // Folosim o mică protecție ca să nu se multiplice la nesfârșit textul pe ecran
-    const existingFriendHeader = display.innerHTML.indexOf('Cerc Social &amp; Colegi');
-    if (existingFriendHeader !== -1) {
-        // Dacă deja există pe ecran secțiunea, o curățăm doar pe ea înainte de a o redesena
-        display.innerHTML = display.innerHTML.substring(0, existingFriendHeader);
-    }
-    
-    display.innerHTML += htmlContent;
+    // Punem datele la locul lor în siguranță totală
+    targetZone.innerHTML = htmlContent;
 }
 /**
  * -----------------------------------------------------------------------------
