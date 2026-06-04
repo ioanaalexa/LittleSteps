@@ -43,54 +43,68 @@ body {
     position: fixed;
     top: 0; left: 0;
     width: 100%; height: 100%;
-    background: linear-gradient(135deg, #f5f6fa 0%, #ede9fe 100%);
+    background-color: var(--bg); /* Culoare de siguranță */
+    background-image: url('assets/start.png'); /* Imaginea ta de fundal */
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
     display: flex;
     align-items: center;
-    justify-content: center;
+    justify-content: center; /* Centrează cardul pe ecran */
     z-index: 2000;
     padding: 20px;
 }
 
+/* Efectul de Sticlă (Glassmorphism) pentru fereastra de login */
 .auth-card {
-    background: var(--white);
+    background: rgba(255, 255, 255, 0.1); 
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px); /* Suport pentru Safari */
+    border: 1px solid rgba(255, 255, 255, 0.3);
     padding: 40px 36px;
     border-radius: 20px;
-    box-shadow: 0 15px 40px rgba(108, 92, 231, 0.12);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
     width: 100%;
     max-width: 440px;
     text-align: center;
+    color: #ffffff; /* Text alb pentru a fi vizibil pe fundal */
 }
 
 .auth-card h2 {
     font-size: 1.6rem;
     font-weight: 700;
-    color: var(--primary);
+    color: #ffffff;
     margin-bottom: 8px;
 }
 
 .auth-card p {
-    color: var(--text-light);
+    color: rgba(255, 255, 255, 0.8);
     margin-bottom: 20px;
     font-size: 0.95rem;
 }
 
+/* Input-uri semi-transparente */
 .auth-card input {
     width: 100%;
     padding: 13px 16px;
     margin: 7px 0;
-    border: 1.5px solid #e9ecef;
+    border: 1px solid rgba(255, 255, 255, 0.4);
     border-radius: 12px;
     font-size: 1rem;
     outline: none;
-    background: #fff;
-    color: var(--text);
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
     display: block;
-    transition: border-color 0.2s;
+    transition: all 0.3s ease;
+}
+
+.auth-card input::placeholder {
+    color: rgba(255, 255, 255, 0.7);
 }
 
 .auth-card input:focus {
-    border-color: var(--primary-light);
-    background: #fafbff;
+    border-color: #ffffff;
+    background: rgba(255, 255, 255, 0.15);
 }
 
 .auth-buttons {
@@ -105,12 +119,35 @@ body {
     width: 100%;
 }
 
+/* Buton Conectare (Alb) */
+.auth-buttons button:first-child {
+    background: #ffffff !important;
+    color: #2d3436 !important;
+    border-radius: 12px;
+    font-weight: 800;
+    border: none;
+}
+.auth-buttons button:first-child:hover {
+    background: #f1f1f1 !important;
+}
+
+/* Buton Cont Nou (Transparent cu margine) */
+.auth-buttons button:last-child {
+    background: transparent !important;
+    color: #ffffff !important;
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 12px;
+}
+.auth-buttons button:last-child:hover {
+    background: rgba(255, 255, 255, 0.15) !important;
+}
+
 #register-terms-container {
     width: 100%;
     margin: 10px 0;
     padding: 12px 14px;
-    background: rgba(108, 92, 231, 0.04);
-    border: 1px solid rgba(108, 92, 231, 0.15);
+    background: transparent;
+    border: none;
     border-radius: 12px;
 }
 
@@ -122,7 +159,7 @@ body {
     text-align: left;
     font-size: 0.8rem;
     line-height: 1.5;
-    color: var(--text-light);
+    color: #ffffff;
 }
 
 #register-terms-container input[type="checkbox"] {
@@ -131,10 +168,6 @@ body {
     padding: 0 !important;
     flex-shrink: 0;
 }
-
-
-/* ─── LAYOUT GENERAL ────────────────────────────────────────── */
-
 .dashboard-container {
     display: flex;
     min-height: 100vh;
