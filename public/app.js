@@ -10,6 +10,27 @@
  * și procesarea timeline-ului în timp real.
  * =============================================================================
  */
+/**
+ * =============================================================================
+ * LITTLESTEPS - APP.JS                          
+ * =============================================================================
+ * * PROIECT: Sistem de Management și Monitorizare pentru Evoluția Copilului
+ * MATERIE: Tehnologii Web / Dezvoltare Aplicații Web
+ * AUTOR: Alexa Ioana
+ * VERSIUNE: 2.2 (Build: 2026.05.15)
+ * * DESCRIERE:
+ * Acest fișier conține întreaga logică de frontend a aplicației LittleSteps.
+ * Gestionează interacțiunea cu utilizatorul, comunicarea cu API-ul PHP (REST),
+ * administrarea cookie-urilor pentru preferințe, randarea graficelor (Chart.js)
+ * și procesarea timeline-ului în timp real.
+ * * IMPLEMENTĂRI RECENTE:
+ * - Sistem de consimțământ Cookie (GDPR Compliance)
+ * - Persistență temă (Dark Mode) prin module Cookie
+ * - Monitorizare Dentiție (Interfață interactivă)
+ * - Monitorizare Scutece (Umed/Murdar/Ambele)
+ * - Cronometru somn în timp real
+ * =============================================================================
+ */
 
 
 /**
@@ -25,6 +46,24 @@
  * * @param {string} name - Numele identificatorului pentru cookie
  * @param {string} value - Valoarea ce urmeaza a fi stocata
  * @param {number} days - Numarul de zile până la expirare
+ */
+function setCookie(name, value, days) {
+    const date = new Date();
+}
+
+/**
+ * -----------------------------------------------------------------------------
+ * --- UTILITARE PENTRU MODULELE COOKIE ---
+ * -----------------------------------------------------------------------------
+ * Folosim cookie-uri pentru a respecta cerințele de stocare a datelor pe
+ * partea de client, accesibile și de către server (PHP).
+ */
+
+/**
+ * Setează un cookie în browserul utilizatorului.
+ * * @param {string} name - Numele identificatorului pentru cookie.
+ * @param {string} value - Valoarea ce urmează a fi stocată.
+ * @param {number} days - Numărul de zile până la expirare.
  */
 function setCookie(name, value, days) {
     const date = new Date();
@@ -911,16 +950,20 @@ async function loadTimeline() {
                 ? dateObj.toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })
                 : dateObj.toLocaleString('ro-RO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
+            // AICI FOLOSIM FUNCȚIA NOUĂ PENTRU A CURĂȚA DATELE
+            const safeTitle = escapeHTML(item.title);
+            const safeDetails = escapeHTML(item.details || item.treatment || item.caption || '');
+
             return `
                 <div class="item timeline-card" style="animation: fadeIn 0.4s ease forwards;">
                     <div class="item-icon-wrapper" style="font-size: 1.5rem;">${item.icon}</div>
                     <div class="item-content">
                         <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                            <strong>${item.title}</strong>
+                            <strong>${safeTitle}</strong>
                             <span class="timestamp-label" style="font-size: 0.75rem; background: var(--bg); padding: 2px 8px; border-radius: 10px;">📅 ${displayTime}</span>
                         </div>
-                        <p class="details-text" style="margin-top: 5px; color: var(--text-light);">${item.details || item.treatment || item.caption || ''}</p>
-                        ${item.isMedia && item.file_path ? `<img src="${item.file_path}" class="timeline-img" style="border-radius: 12px; margin-top: 10px; max-height: 250px; width: auto; max-width: 100%;">` : ''}
+                        <p class="details-text" style="margin-top: 5px; color: var(--text-light);">${safeDetails}</p>
+                        ${item.isMedia && item.file_path ? `<img src="${escapeHTML(item.file_path)}" class="timeline-img" style="border-radius: 12px; margin-top: 10px; max-height: 250px; width: auto; max-width: 100%;">` : ''}
                     </div>
                 </div>
             `;
