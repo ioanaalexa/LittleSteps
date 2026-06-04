@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LittleSteps - Bun venit</title>
+    <style>
+
+        /* Reset de baza */
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Segoe UI', Arial, sans-serif;
+            background: linear-gradient(135deg, #f5f6fa 0%, #ede9fe 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        /* Cardul central alb */
+        .welcome-card {
+            background: #ffffff;
+            border-radius: 20px;
+            box-shadow: 0 15px 40px rgba(108, 92, 231, 0.12);
+            padding: 48px 40px 40px;
+            max-width: 520px;
+            width: 100%;
+            text-align: center;
+        }
+
+        /* Badge-ul verde de sus */
+        .badge {
+            display: inline-block;
+            background: #dcfce7;
+            color: #166534;
+            font-size: 0.75rem;
+            font-weight: 600;
+            padding: 5px 16px;
+            border-radius: 99px;
+            letter-spacing: 0.04em;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Logo emoji */
+        .logo-emoji {
+            font-size: 3rem;
+            margin-bottom: 0.5rem;
+            line-height: 1;
+        }
+
+        /* Titlul principal */
+        .welcome-card h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #2d3436;
+            margin-bottom: 0.4rem;
+            letter-spacing: -0.02em;
+        }
+
+        /* Descrierea de sub titlu */
+        .welcome-card p.description {
+            color: #636e72;
+            font-size: 1rem;
+            line-height: 1.7;
+            max-width: 380px;
+            margin: 0 auto 2rem;
+        }
+
+        /* Grupul de butoane */
+        .btn-group {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 2rem;
+        }
+
+        /* Butonul principal - Creez cont */
+        .btn-primary {
+            width: 100%;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 700;
+            background: #6c5ce7;
+            color: #ffffff;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: background 0.2s, transform 0.1s;
+            text-decoration: none;
+            display: block;
+        }
+
+        .btn-primary:hover {
+            background: #5a4bd1;
+            transform: translateY(-1px);
+        }
+
+        /* Butonul secundar - Am cont */
+        .btn-secondary {
+            width: 100%;
+            padding: 14px;
+            font-size: 1rem;
+            font-weight: 600;
+            background: #ffffff;
+            color: #2d3436;
+            border: 1.5px solid #dcdde1;
+            border-radius: 10px;
+            cursor: pointer;
+            font-family: inherit;
+            transition: border-color 0.2s, transform 0.1s;
+            text-decoration: none;
+            display: block;
+        }
+
+        .btn-secondary:hover {
+            border-color: #6c5ce7;
+            color: #6c5ce7;
+            transform: translateY(-1px);
+        }
+
+        /* Grid-ul cu functionalitatile aplicatiei - 3 coloane */
+        .features-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+            text-align: left;
+            margin-bottom: 1.5rem;
+        }
+
+        /* Fiecare card de functionalitate */
+        .feature-item {
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .feature-item .icon {
+            font-size: 1.4rem;
+            margin-bottom: 4px;
+        }
+
+        .feature-item .title {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #2d3436;
+            margin-bottom: 2px;
+        }
+
+        .feature-item .desc {
+            font-size: 0.73rem;
+            color: #636e72;
+            line-height: 1.4;
+        }
+
+        /* Culorile individuale ale cardurilor */
+        .f1 { background: #f8f7ff; }
+        .f2 { background: #f0fff8; }
+        .f3 { background: #fff5f5; }
+        .f4 { background: #f0f7ff; }
+        .f5 { background: #fffbf0; }
+        .f6 { background: #f0fff4; }
+
+        /* Textul mic de la baza cu sigla verde */
+        .trust-note {
+            font-size: 0.75rem;
+            color: #b2bec3;
+        }
+
+        /* Responsive pentru telefon */
+        @media (max-width: 480px) {
+            .welcome-card {
+                padding: 32px 20px 28px;
+            }
+
+            .welcome-card h1 {
+                font-size: 1.6rem;
+            }
+
+            .features-grid {
+                grid-template-columns: 1fr 1fr;
+            }
+        }
+
+    </style>
+</head>
+<body>
+
+    <div class="welcome-card">
+
+        <!-- Badge sus -->
+        <div class="badge">Monitorizare pediatrica inteligenta</div>
+
+        <!-- Logo si titlu -->
+        <div class="logo-emoji">&#128118;</div>
+        <h1>LittleSteps</h1>
+
+        <!-- Descriere scurta -->
+        <p class="description">
+            Urmaresti somnul, mesele, cresterea si sanatatea copilului tau
+            &mdash; totul intr-un singur loc, securizat pentru intreaga familie.
+        </p>
+
+        <!-- Butoane de navigare catre index.html -->
+        <!-- Ambele duc la index.html care are formularul de login/register -->
+        <div class="btn-group">
+            <a href="index.html" class="btn-primary">
+                &#128640; Sunt parinte nou &mdash; Creez cont
+            </a>
+            <a href="index.html" class="btn-secondary">
+                &#128273; Am deja cont &mdash; Ma conectez
+            </a>
+        </div>
+
+        <!-- Grid cu cele 6 functionalitati principale -->
+        <div class="features-grid">
+
+            <div class="feature-item f1">
+                <div class="icon">&#127868;</div>
+                <div class="title">Jurnal zilnic</div>
+                <div class="desc">Hranire, somn si scutece</div>
+            </div>
+
+            <div class="feature-item f2">
+                <div class="icon">&#128200;</div>
+                <div class="title">Grafice crestere</div>
+                <div class="desc">Vizualizare in timp real</div>
+            </div>
+
+            <div class="feature-item f3">
+                <div class="icon">&#127973;</div>
+                <div class="title">Istoric medical</div>
+                <div class="desc">Vaccinuri si dentitie</div>
+            </div>
+
+            <div class="feature-item f4">
+                <div class="icon">&#128106;</div>
+                <div class="title">Acces familie</div>
+                <div class="desc">Roluri distincte</div>
+            </div>
+
+            <div class="feature-item f5">
+                <div class="icon">&#128247;</div>
+                <div class="title">Galerie amintiri</div>
+                <div class="desc">Organizat cronologic</div>
+            </div>
+
+            <div class="feature-item f6">
+                <div class="icon">&#128274;</div>
+                <div class="title">Date izolate</div>
+                <div class="desc">Multi-Tenant securizat</div>
+            </div>
+
+        </div>
+
+        <!-- Nota de incredere la baza -->
+        <p class="trust-note">
+            &#128994; Datele tale sunt stocate local si izolate complet per familie
+        </p>
+
+    </div>
+
+</body>
+</html>

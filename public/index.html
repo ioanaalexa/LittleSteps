@@ -8,6 +8,23 @@
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
+    <script>
+    // Daca utilizatorul deschide direct index.html fara sa vina de pe welcome.html
+    // il trimitem automat la pagina de welcome
+    if (document.referrer === '' || !document.referrer.includes('welcome.html')) {
+        // Verificam daca nu e deja logat - daca e logat il lasam in aplicatie
+        fetch('api/auth.php?action=status')
+            .then(r => r.json())
+            .then(data => {
+                if (!data.logged_in) {
+                    window.location.href = 'welcome.html';
+                }
+            })
+            .catch(() => {
+                window.location.href = 'welcome.html';
+            });
+    }
+</script>
 
     <div id="auth-overlay" class="auth-overlay">
         <div class="auth-card" style="max-width: 420px; padding: 30px; border-radius: 16px; box-shadow: 0 10px 30px rgba(0,0,0,0.15); box-sizing: border-box;">
@@ -42,14 +59,14 @@
             <ul>
                 <li id="menu-timeline" class="active" onclick="showSection('timeline')">🏠 Timeline</li>
                 <li id="menu-daily" onclick="showSection('daily')">📝 Jurnal Zilnic</li>
-                <li id="menu-medical" onclick="showSection('medical')">🏥 Medical</li>
+                <li id="menu-medical" onclick="showSection('medical')">🏥 Istoric Medical</li>
                 <li id="menu-teeth" onclick="showSection('teeth')">🦷 Dentiție</li>
                 <li id="menu-evolution" onclick="showSection('evolution')">📈 Evoluție</li>
                 <li id="menu-vaccines" onclick="showSection('vaccines')">💉 Vaccinuri</li>
-                <li id="menu-gallery" onclick="showSection('gallery')">🖼️ Galerie</li>
+                <li id="menu-gallery" onclick="showSection('gallery')">🏞️ Galerie</li>
                 <li id="menu-family" onclick="showSection('family')">👪 Familie</li>
                 <li id="menu-export" onclick="showSection('export')">📊 Export & RSS</li>
-                <li id="menu-admin" style="display:none; background-color: #ffeaa7;" onclick="showSection('admin')">🛡️ Administrare</li>
+                <li id="menu-admin" style="display:none; background-color: #ffeaa7;" onclick="showSection('admin')"> Administrare</li>
             </ul>
             <button class="btn-logout" onclick="logout()">Ieșire 🚪</button>
         </nav>
@@ -98,7 +115,7 @@
 
                     <hr style="margin-bottom: 30px; border: 0; border-top: 1px solid #eee;">
 
-                    <h3>😴 Somn (Cronometru Real-Time)</h3>
+                    <h3> Somn (Cronometru Real-Time)</h3>
                     <p style="color: var(--text-light); margin-bottom: 15px;">Pornește cronometrul când bebelușul adoarme și oprește-l când se trezește.</p>
                     <button id="sleep-timer-btn" class="btn-sleep" style="width: 100%; padding: 20px; font-size: 1.2rem;" onclick="handleSleepTimer()">😴 Start Somn</button>
 
@@ -203,6 +220,7 @@
                     <div class="card-container">
                         <h3>👥 Membrii Familiei</h3>
                         <div id="family-list-display"></div>
+                        <div id="friends-list-display" style="margin-top: 25px;"></div>
                     </div>
 
                     <div class="card-container">
@@ -277,7 +295,7 @@
          style="text-decoration:none; padding:10px 20px; background:#e67e22;
                 color:white; border-radius:8px; display:inline-flex;
                 align-items:center; font-weight:bold;">
-        🧡 Flux RSS
+         Flux RSS
       </a>
     </div>
 
