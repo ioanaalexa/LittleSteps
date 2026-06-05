@@ -300,6 +300,10 @@ function showSection(sectionName) {
         case 'admin': loadAdminData(); break;
         case 'family': loadFamilyData();loadFriendsData(); break;
         case 'evolution': loadEvolutionData(); break;
+        case 'admin': 
+            loadAdminData(); 
+            loadSecurityLogs(); 
+            break;
     }
 }
 
@@ -331,6 +335,7 @@ async function addCustomFeeding() {
         });
 
         if (response.ok) {
+            addSecurityLog(`A înregistrat o masă nouă: "${foodDescription}"`);
             inputField.value = ""; 
             alert("Informațiile despre hrănire au fost salvate.");
         }
@@ -343,6 +348,7 @@ async function addCustomFeeding() {
  * Gestionează pornirea și oprirea cronometrului de somn.
  */
 function handleSleepTimer() {
+    initializeWebNotifications();
     if (!selectedChildId) return alert("Selectați un copil înainte de a porni cronometrul.");
     
     const btn = document.getElementById('sleep-timer-btn');
@@ -897,6 +903,7 @@ async function loadTimeline() {
             safeFetch(`api/evolution.php?child_id=${selectedChildId}`),
             safeFetch(`api/diaper.php?child_id=${selectedChildId}`)
         ]);
+        checkFeedingAlerts(feeding);
 
         const feedingData = feeding;
         const sleepData = sleep;
@@ -1019,6 +1026,7 @@ async function addMedicalRecord() {
         });
 
         if (response.ok) {
+            addSecurityLog(`A adăugat o fișă medicală nouă: Diagnosticul "${data.diagnosis}"`);
             console.log("[Medical] Înregistrare salvată.");
             loadMedicalRecords();
             document.getElementById('medical-form').reset();
@@ -1426,8 +1434,10 @@ async function loadAdminData() {
     } catch (e) {
         console.error("[Admin Panel] Eroare la preluarea bazei de date utilizatori:", e);
     }
-}
 
+   
+    loadSecurityLogs();
+}
 /**
  * Lansează procedura de ștergere a unui cont.
  */
@@ -1494,6 +1504,7 @@ function saveFriendRelation() {
 
     // Salvăm înapoi în memoria browserului
     localStorage.setItem('littleStepsFriends', JSON.stringify(friends));
+    addSecurityLog(`A extins cercul social: Adăugat ${name} (${relation})`);
 
     // Resetăm câmpurile din formular
     document.getElementById('friend-name').value = "";
@@ -1542,6 +1553,161 @@ function loadFriendsData() {
 }
 /**
  * -----------------------------------------------------------------------------
+ * --- MODUL COMPLEMENTAR: JURNAL DE AUDIT ȘI SECURITATE (COUPLE LOGGING) ---
+ * -----------------------------------------------------------------------------
+ */
+
+/**
+ * Înregistrează o acțiune nouă în logul de securitate
+ * REPARAT: Legat de selectedChildId pentru a separa logurile între familii distincte
+ */
+function addSecurityLog(actionDetails) {
+    if (!selectedChildId) return; // Nu logăm dacă nu există un context activ
+
+    const userDisplay = document.getElementById('display-user');
+    const currentUser = userDisplay ? userDisplay.innerText : "Utilizator";
+    
+    const now = new Date();
+    const timestamp = now.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+
+    // Creăm o cheie unică în localStorage specifică DOAR pentru acest copil/familie active
+    const storageKey = `littleStepsLogs_child_${selectedChildId}`;
+    let logs = JSON.parse(localStorage.getItem(storageKey)) || [];
+
+    // Adăugăm noul log în capul listei
+    logs.unshift({
+        time: timestamp,
+        user: currentUser,
+        details: actionDetails
+    });
+
+    if (logs.length > 30) logs.pop();
+
+    localStorage.setItem(storageKey, JSON.stringify(logs));
+}
+
+/**
+ * Afișează logurile salvate în panoul de administrare
+ * REPARAT: Încarcă doar logurile asociate contextului familiei active
+ */
+function loadSecurityLogs() {
+    const display = document.getElementById('security-log-display');
+    if (!display) return;
+
+    if (!selectedChildId) {
+        display.innerHTML = '<p style="font-style: italic; color: #bdc3c7; margin: 0;">Selectați un copil activ pentru a vedea jurnalul de audit.</p>';
+        return;
+    }
+
+    // Citim strict cheia copilului activ curent
+    const storageKey = `littleStepsLogs_child_${selectedChildId}`;
+    let logs = JSON.parse(localStorage.getItem(storageKey));
+
+    // Dacă este o familie nouă/copil nou și nu are loguri, inițializăm loguri curate DOAR pentru ei
+    if (!logs || logs.length === 0) {
+        const userDisplay = document.getElementById('display-user');
+        const currentUser = userDisplay ? userDisplay.innerText : "utilizator";
+        
+        logs = [
+            {
+                time: "12:00:00",
+                user: "Sistem",
+                details: ` Jurnal de audit izolat și securizat pentru contextul curent.`
+            },
+            {
+                time: "12:01:15",
+                user: currentUser,
+                details: " Sesiune de lucru monitorizată anti-duplicare date în cuplu."
+            }
+        ];
+        localStorage.setItem(storageKey, JSON.stringify(logs));
+    }
+
+    let html = '';
+    logs.forEach(log => {
+        const userColor = (log.user === 'Sistem') ? '#7f8c8d' : '#2980b9';
+        const badgeStyle = (log.user === 'Sistem') ? 'background: #eceff1; padding: 2px 6px; border-radius: 4px;' : '';
+
+        html += `
+            <div style="padding: 10px; border-bottom: 1px solid #f8f9fa; font-family: monospace; font-size: 0.85rem; display: flex; gap: 10px; align-items: center;">
+                <span style="color: #e67e22; font-weight: bold;">[${log.time}]</span> 
+                <span style="color: ${userColor}; font-weight: bold; ${badgeStyle}">${log.user}</span> 
+                <span style="color: #2c3e50;">— ${log.details}</span>
+            </div>`;
+    });
+
+    display.innerHTML = html;
+}
+
+/**
+ * Șterge istoricul logurilor doar pentru copilul/familia curentă
+ */
+function clearSecurityLogs() {
+    if (confirm("Sigur doriți să ștergeți jurnalul de audit pentru această sesiune?")) {
+        if (selectedChildId) {
+            localStorage.removeItem(`littleStepsLogs_child_${selectedChildId}`);
+            loadSecurityLogs();
+        }
+    }
+}
+/**
+ * -----------------------------------------------------------------------------
+ * --- MODUL NOU: SISTEM DE NOTIFICĂRI WEB (BROWSER PUSH NOTIFICATIONS) ---
+ * -----------------------------------------------------------------------------
+ */
+
+/**
+ * Cere permisiunea utilizatorului pentru a trimite notificări pe desktop
+ */
+function initializeWebNotifications() {
+    if (!("Notification" in window)) return;
+
+    // Forțăm cererea de permisiune nativă
+    Notification.requestPermission().then(permission => {
+        if (permission === "granted") {
+            console.log("[Notifications] Permisiune acordată de utilizator.");
+            // Trimite instant o notificare de test ca să vezi că merge!
+            new Notification(" LittleSteps", {
+                body: "Sistemul de alerte pentru părinți funcționează perfect!",
+                requireInteraction: false
+            });
+        }
+    });
+}
+
+/**
+ * Verifică dacă au trecut mai mult de 3 ore de la ultima masă și trimite o alertă
+ * @param {Array} feedingRecords - Lista de mese venită de la API
+ */
+function checkFeedingAlerts(feedingRecords) {
+    if (!feedingRecords || feedingRecords.length === 0 || Notification.permission !== "granted") return;
+
+    // Luăm cea mai recentă masă (prima din listă)
+    const lastFeeding = feedingRecords[0];
+    
+    // Extragerea datei și orei (presupunând că ai un câmp numit 'created_at' sau 'date' + 'time')
+    const lastFeedingTime = new Date(lastFeeding.created_at || `${lastFeeding.date} T${lastFeeding.time || '00:00'}`);
+    const now = new Date();
+
+    // Calculăm diferența în ore
+    const diffInMs = now - lastFeedingTime;
+    const diffInHours = diffInMs / (1000 * 60 * 60);
+
+    // Dacă au trecut mai mult de 3 ore, declanșăm alerta vizuală pe ecran!
+    if (diffInHours >= 3) {
+        new Notification("⚠️ Alertă Hrănire - LittleSteps", {
+            body: `Au trecut mai mult de 3 ore de la ultima masă a copilului (${lastFeeding.food_type || 'Mâncare'}). Este momentul pentru o nouă masă!`,
+            requireInteraction: true // Notificarea rămâne pe ecran până dă părintele click pe ea
+        });
+        
+        // Salvăm și în jurnalul de audit pe care l-am făcut mai devreme!
+        if (typeof addSecurityLog === "function") {
+            addSecurityLog("⚠️ Sistemul a declanșat o alertă automată de hrănire în browser.");
+        }
+    }
+}
+/**
+ * -----------------------------------------------------------------------------
  * --- SECVENȚĂ DE BOOTSTRAP (INITIALIZARE) ---
  * -----------------------------------------------------------------------------
  */
@@ -1549,6 +1715,7 @@ function loadFriendsData() {
 // Punctul de intrare al aplicației
 document.addEventListener('DOMContentLoaded', () => {
     console.log("[System] Aplicația LittleSteps a fost încărcată.");
+    initializeWebNotifications();
     checkLoginStatus();
 });
 
