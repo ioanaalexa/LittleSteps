@@ -31,8 +31,33 @@
  * - Cronometru somn în timp real
  * =============================================================================
  */
+    ///Verifica daca emailul respecta forma 
+    // Adaugă asta sus de tot în app.js
+        function esteEmailValid(email) {
+    const formulaRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return formulaRegex.test(email);
+}
+// Funcție care verifică dacă data este reală, nu e în viitor și nu e aberantă (ex: anul 1000)
+function esteDataValida(dataIntrodusa) {
+    // 1. Verificăm dacă a lăsat căsuța goală
+    if (!dataIntrodusa) return false; 
 
+    const data = new Date(dataIntrodusa);
+    const dataDeAzi = new Date();
+    const limitaJos = new Date("2000-01-01");
 
+    // 2. Verificăm dacă e un format de dată stricat complet
+    if (isNaN(data.getTime())) return false;
+
+    // 3. Verificăm dacă e în viitor
+    if (data > dataDeAzi) return false;
+
+    // 4. Verificăm dacă e mai veche de anul 2000
+    if (data < limitaJos) return false;
+
+    // Dacă a trecut de toate testele, e o dată validă!
+    return true; 
+}
 /**
  * -----------------------------------------------------------------------------
  * --- UTILITARE PENTRU MODULELE COOKIE ---
@@ -518,9 +543,10 @@ function renderTeethArch(container, prefix, data) {
     }
 }
 
+
 /**
  * Gestionează interacțiunea la click pe un dinte.
- * REPARAT: Formatare robustă pentru data locală pentru a preveni erorile de validare în PHP.
+ * REPARAT: Formatare robustă pentru data locală + Validare strictă a datei introduse.
  */
 async function handleToothClick(id, date) {
     if (date) {
@@ -538,6 +564,12 @@ async function handleToothClick(id, date) {
     const inputDate = prompt("Introduceți data apariției dințișorului (YYYY-MM-DD):", defaultLocalDate);
     
     if (inputDate) {
+        // --- PAZNICUL SUPREM PENTRU DATA DINȚIȘORULUI ---
+        if (!esteDataValida(inputDate)) {
+            return alert("Data introdusă este invalidă! Te rugăm să folosești formatul YYYY-MM-DD și să nu folosești o dată din viitor.");
+        }
+        // ------------------------------------------------
+
         try {
             const response = await fetch('api/teeth.php', {
                 method: 'POST',
@@ -668,15 +700,26 @@ async function saveFamilyMember(type) {
         payload.name = document.getElementById('new-child-name').value;
         payload.birthday = document.getElementById('new-child-birth').value;
         payload.gender = document.getElementById('new-child-gender').value; 
+        
         if(!payload.name) return alert("Numele copilului este obligatoriu!");
+
+        // --- PAZNICUL PENTRU DATA DE NAȘTERE A COPILULUI ---
+        if (!esteDataValida(payload.birthday)) {
+            return alert("Data de naștere este invalidă! Asigură-te că ai completat-o corect și că nu este din viitor.");
+        }
+
     } else {
-       
         payload.fullname = document.getElementById('new-parent-name').value;
         payload.email = document.getElementById('new-parent-email').value;
         payload.gender = document.getElementById('new-parent-gender').value;
         payload.role = document.getElementById('new-parent-role').value; // NOU: Preluăm rolul ales
+        
         if(!payload.email) return alert("Email-ul este obligatoriu!");
-    
+
+        // --- PAZNICUL PENTRU EMAILUL PĂRINTELUI (Opțional, dar super util!) ---
+        if (!esteEmailValid(payload.email)) {
+            return alert("Te rugăm să introduci o adresă de email validă pentru noul membru!");
+        }
     }
 
     try {
@@ -688,7 +731,7 @@ async function saveFamilyMember(type) {
 
         if (response.ok) {
             alert("Salvare reușită!");
-            loadFamilyData();
+            loadFamilyData(); // Reîncarcă lista familiei
         }
     } catch (e) {
         console.error("[Family Save] Eroare:", e);
@@ -753,6 +796,11 @@ async function handleAuth(action) {
     // Validare primară elemente obligatorii
     if (!email || !password) {
         return alert("Vă rugăm să introduceți atât emailul cât și parola.");
+    }
+
+    // --- PROTECȚIA NOUĂ: VALIDAREA STRUCTURII EMAILULUI ---
+    if (!esteEmailValid(email)) {
+        return alert("Te rugăm să introduci o adresă de email validă (ex: nume@domeniu.com)!");
     }
 
     // --- PROTECȚIE ȘI VALIDARE STRICTĂ GDPR LA ÎNREGISTRARE ---
@@ -1014,8 +1062,14 @@ async function addMedicalRecord() {
         doctor: document.getElementById('med-doctor').value
     };
 
-    if (!data.date || !data.diagnosis) {
-        return alert("Vă rugăm să introduceți cel puțin data și diagnosticul/motivul vizitei.");
+    // --- PAZNICUL PENTRU DATĂ ---
+    if (!esteDataValida(data.date)) {
+        return alert("Data vizitei medicale este invalidă! Asigură-te că ai completat-o corect și că nu este din viitor.");
+    }
+    
+    // --- PAZNICUL PENTRU DIAGNOSTIC ---
+    if (!data.diagnosis) {
+        return alert("Vă rugăm să introduceți diagnosticul sau motivul vizitei.");
     }
 
     try {
@@ -1372,11 +1426,23 @@ async function saveEvolution(category) {
         requestData.date = document.getElementById('growth-date').value;
         requestData.weight = document.getElementById('growth-weight').value;
         requestData.height = document.getElementById('growth-height').value;
-        if (!requestData.date) return alert("Introduceți data măsurătorii.");
+        
+        // --- PAZNICUL PENTRU CREȘTERE ---
+        if (!esteDataValida(requestData.date)) {
+            return alert("Data măsurătorii este invalidă! Asigură-te că ai completat-o corect și că nu este din viitor.");
+        }
+        
     } else {
         requestData.date = document.getElementById('milestone-date').value;
         requestData.name = document.getElementById('milestone-name').value;
-        if (!requestData.name || !requestData.date) return alert("Completați datele reperului.");
+        
+        // --- PAZNICUL PENTRU REPERE (MILESTONES) ---
+        if (!esteDataValida(requestData.date)) {
+            return alert("Data reperului este invalidă! Asigură-te că nu este din viitor.");
+        }
+        if (!requestData.name) {
+            return alert("Completați numele reperului.");
+        }
     }
 
     try {
