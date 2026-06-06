@@ -1485,35 +1485,55 @@ function exportData(format) {
  * Salvează o relație nouă cu un alt copil în localStorage
  */
 function saveFriendRelation() {
+    const selectorDestinatar = document.getElementById('friend-child-destinatar').value;
+    
+    // Preluăm ID-ul copilului selectat global în bara de sus
+    const childSelectorGlobal = document.getElementById('active-child-select');
+    const currentChildId = childSelectorGlobal ? childSelectorGlobal.value : selectedChildId;
+
+    if (!currentChildId) {
+        return alert("Vă rugăm să aveți un copil activ selectat în aplicație!");
+    }
+
     const name = document.getElementById('friend-name').value;
     const relation = document.getElementById('friend-relation').value;
     const details = document.getElementById('friend-details').value || "Fără detalii";
 
     if (!name) return alert("Vă rugăm să introduceți numele copilului/prietenului!");
 
-    // Preluăm prietenii existenți sau creăm un array gol
     let friends = JSON.parse(localStorage.getItem('littleStepsFriends')) || [];
 
-    // Adăugăm noul prieten mapat pe copilul activ curent
+    // Logica de mapare în funcție de dropdown-ul din HTML
+    let finalChildId = currentChildId;
+    let isSharedForAll = false;
+
+    if (selectorDestinatar === 'all' || relation === "Verișor / Verișoară") {
+        isSharedForAll = true; 
+        finalChildId = "ALL_CHILDREN"; // Îi dăm un ID special global
+    }
+
+    // Adăugăm obiectul complet în localStorage
     friends.push({
-        childId: selectedChildId,
+        childId: finalChildId,
         name: name,
         relation: relation,
-        details: details
+        details: details,
+        isShared: isSharedForAll
     });
 
-    // Salvăm înapoi în memoria browserului
     localStorage.setItem('littleStepsFriends', JSON.stringify(friends));
-    addSecurityLog(`A extins cercul social: Adăugat ${name} (${relation})`);
+    
+    if (typeof addSecurityLog === "function") {
+        addSecurityLog(`A adăugat relația socială: ${name} (${relation})`);
+    }
 
-    // Resetăm câmpurile din formular
+    // Resetăm formularul
     document.getElementById('friend-name').value = "";
     document.getElementById('friend-details').value = "";
 
     alert("Relația socială a fost înregistrată cu succes!");
-    loadFriendsData(); // Actualizăm lista vizuală
+    loadFriendsData(); // Reîncărcăm lista vizuală ca să apară pe ecran
 }
-
 /**
  * Încarcă și afișează cercul social în funcție de copilul selectat
  */
@@ -1522,33 +1542,43 @@ function saveFriendRelation() {
  * MODIFICAT: Se lipește direct în containerul principal existent pentru a evita erorile de DOM!
  */
 function loadFriendsData() {
-    // Căutăm containerul fix pe care l-am creat în funcția de mai sus
     const targetZone = document.getElementById('zona-prieteni-sigura');
-    if (!targetZone) return; // Dacă nu s-a încărcat încă lista mare, așteptăm
+    if (!targetZone) return; 
 
-    if (!selectedChildId) return;
+    const childSelectorGlobal = document.getElementById('active-child-select');
+    const currentChildId = childSelectorGlobal ? childSelectorGlobal.value : selectedChildId;
+
+    if (!currentChildId) return;
 
     let friends = JSON.parse(localStorage.getItem('littleStepsFriends')) || [];
     
-    // Filtrăm prietenii ca să îi arătăm doar pe cei ai copilului selectat curent
-    let currentChildFriends = friends.filter(f => String(f.childId) === String(selectedChildId));
+    // --- FILTRARE INTELIGENTĂ REPARATĂ ---
+    // Îi arătăm doar dacă aparțin fix de acest ID de copil SAU dacă sunt marcați pentru toți copiii ("ALL_CHILDREN")
+    let currentChildFriends = friends.filter(f => 
+        String(f.childId) === String(currentChildId) || 
+        f.childId === "ALL_CHILDREN" ||
+        f.isShared === true
+    );
 
-    // Generăm bucata de HTML pentru prieteni
     let htmlContent = '<h4 class="sub-header" style="margin-top:25px; color: #1abc9c; border-top: 1px dashed #ddd; padding-top: 15px;">👦 Cerc Social & Colegi (Cerinta)</h4>';
 
     if (currentChildFriends.length === 0) {
         htmlContent += '<p style="font-style: italic; color: #8585a8; font-size: 0.9rem; margin-top: 5px;">Nu au fost adăugate relații sociale pentru acest copil.</p>';
     } else {
         currentChildFriends.forEach(f => {
+            const isShared = f.childId === "ALL_CHILDREN" || f.isShared === true;
+            const borderStyle = isShared ? "border-left: 4px solid #e67e22;" : "border-left: 4px solid #1abc9c;";
+            const labelPrefix = isShared ? "🧑‍🤝‍🧑" : "🤝";
+
             htmlContent += `
-                <div class="item family-item" style="border-left: 4px solid #1abc9c; background: #fbfcfc; padding: 10px; margin-bottom: 8px; border-radius: 6px;">
-                    <strong>🤝 ${f.name}</strong> (${f.relation})
+                <div class="item family-item" style="${borderStyle} background: #fbfcfc; padding: 10px; margin-bottom: 8px; border-radius: 6px;">
+                    <strong>${labelPrefix} ${f.name}</strong> (${f.relation})
+                    ${isShared ? '<span style="font-size:0.75rem; background:#fef5e7; color:#e67e22; padding:2px 6px; border-radius:4px; margin-left:5px; font-weight:bold;">Comun pentru familie</span>' : ''}
                     <br><small style="color: #7f8c8d;">Locație/Grup: ${f.details}</small>
                 </div>`;
         });
     }
 
-    // Punem datele la locul lor în siguranță totală
     targetZone.innerHTML = htmlContent;
 }
 /**
