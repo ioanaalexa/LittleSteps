@@ -2,6 +2,7 @@
 // api/rss.php
 require_once '../config/db.php';
 
+
 // Setăm header-ul pentru XML (foarte important pentru ca browserul să-l recunoască)
 header('Content-Type: application/rss+xml; charset=utf-8');
 
@@ -12,6 +13,7 @@ try {
 } catch (Exception $e) {
     die("Eroare la generarea fluxului.");
 }
+
 
 // Generăm structura XML a fluxului RSS
 echo '<?xml version="1.0" encoding="UTF-8" ?>';
