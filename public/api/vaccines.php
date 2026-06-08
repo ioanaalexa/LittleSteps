@@ -14,7 +14,8 @@ if (!isset($_SESSION['user_id'])) {
 
 $method = $_SERVER['REQUEST_METHOD'];
 
-// Creăm tabelul dacă nu există
+// creaza tabel daca nu exista 
+
 $pdo->exec("CREATE TABLE IF NOT EXISTS vaccines (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     child_id INTEGER,
