@@ -912,7 +912,17 @@ function logout() {
     });
 }
 
-
+// --- FUNCȚIE UTILITARĂ PENTRU SECURIZARE (XSS PROTECTION) ---
+// Această funcție curăță caracterele speciale din baza de date pentru a preveni erorile de randare
+function escapeHTML(str) {
+    if (!str) return '';
+    return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+}
 /**
  * -----------------------------------------------------------------------------
  * --- TIMELINE INTELIGENT CU FILTRARE CALENDARISTICĂ ---
@@ -942,14 +952,16 @@ async function loadTimeline() {
     };
 
     try {
-        // Colectăm datele în paralel din cele 6 surse (Parallel Data Aggregation)
-        const [feeding, sleep, medical, media, evolution, diaper] = await Promise.all([
+        // MODIFICAT: Colectăm în paralel din 8 surse acum (am adăugat capetele de tabel pentru vaccines și teeth)
+        const [feeding, sleep, medical, media, evolution, diaper, vaccines, teeth] = await Promise.all([
             safeFetch(`api/feeding.php?child_id=${selectedChildId}`),
             safeFetch(`api/sleep.php?child_id=${selectedChildId}`),
             safeFetch(`api/medical.php?child_id=${selectedChildId}`),
             safeFetch(`api/media.php?child_id=${selectedChildId}`),
             safeFetch(`api/evolution.php?child_id=${selectedChildId}`),
-            safeFetch(`api/diaper.php?child_id=${selectedChildId}`)
+            safeFetch(`api/diaper.php?child_id=${selectedChildId}`),
+            safeFetch(`api/vaccines.php?child_id=${selectedChildId}`),
+            safeFetch(`api/teeth.php?child_id=${selectedChildId}`)
         ]);
         checkFeedingAlerts(feeding);
 
@@ -960,6 +972,25 @@ async function loadTimeline() {
         const evolutionData = evolution;
         const diaperData = diaper;
 
+        // NOU: Procesăm maparea structurală pentru obiectul de dinți { "U-1": "2026-05-15" } primit de la API
+        let teethEvents = [];
+        if (teeth && typeof teeth === 'object' && !Array.isArray(teeth)) {
+            Object.keys(teeth).forEach(toothId => {
+                const parts = toothId.split('-');
+                const pozitie = (toothId.includes('U') ? 'Sus-' : 'Jos-') + (parts[1] || toothId);
+                teethEvents.push({
+                    icon: '🦷',
+                    title: 'Dinte Nou Erupt!',
+                    details: `A apărut dințișorul de lapte: ${pozitie}`,
+                    date: teeth[toothId],
+                    isDateOnly: true
+                });
+            });
+        }
+
+        // NOU: Filtrăm doar vaccinurile care au fost marcate ca administrate (status == 1)
+        let administeredVaccines = (vaccines || []).filter(v => v.status == 1 || v.status == '1');
+
         // Combinăm totul într-un tablou brut (Data Flatting)
         let rawEvents = [
             ...feedingData.map(f => ({ ...f, icon: '🍼', title: `Hrană: ${f.type}`, date: f.created_at })),
@@ -968,13 +999,17 @@ async function loadTimeline() {
             ...mediaData.map(i => ({ ...i, icon: '🖼️', title: 'Imagine', date: i.created_at, isMedia: true })),
             ...diaperData.map(d => ({ ...d, icon: '🧷', title: `Scutec: ${d.type}`, date: d.created_at })),
             ...(evolutionData.growth || []).map(g => ({ icon: '📏', title: 'Creștere', details: `⚖️ ${g.weight}kg | 📏 ${g.height}cm`, date: g.recorded_date, isDateOnly: true })),
-            ...(evolutionData.milestones || []).map(m => ({ icon: '🏆', title: `Reper: ${m.milestone_name}`, details: 'Bifat!', date: m.milestone_date, isDateOnly: true }))
+            ...(evolutionData.milestones || []).map(m => ({ icon: '🏆', title: `Reper: ${m.milestone_name}`, details: 'Bifat!', date: m.milestone_date, isDateOnly: true })),
+            // NOU: Adăugate în rawEvents fără a altera restul mapărilor din array
+            ...administeredVaccines.map(v => ({ icon: '💉', title: `Vaccinare: ${v.name}`, details: `Doza recomandată la: ${v.age_tag}`, date: v.date_administered, isDateOnly: true })),
+            ...teethEvents
         ];
 
         // --- LOGICĂ FILTRARE CALENDAR ---
         let filteredEvents = rawEvents;
         if (dateFilter) {
             filteredEvents = rawEvents.filter(event => {
+                if (!event.date) return false;
                 // Extragem doar partea de YYYY-MM-DD din data evenimentului
                 const eventDate = event.date.split(' ')[0]; 
                 return eventDate === dateFilter;
@@ -1043,7 +1078,6 @@ function resetTimelineFilter() {
         console.log("[Timeline Filter] Filtrul a fost resetat la 'Toate'.");
     }
 }
-
 /**
  * -----------------------------------------------------------------------------
  * --- ISTORIC MEDICAL ---
