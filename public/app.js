@@ -1636,36 +1636,34 @@ function exportData(format) {
  * Salvează o relație nouă cu un alt copil în localStorage
  */
 async function saveFriendRelation() {
-    // 1. Aflăm CUI vrem să îi asociem relația, citind noul tău selector din HTML
+    // 1. Citim ce ai selectat în dropdown-ul din HTML
     const destinationSelect = document.getElementById('friend-child-destinatar').value;
-    
-    // Luăm ID-ul copilului curent (cel activ, din bara de sus a aplicației)
     const activeChildSelect = document.getElementById('active-child-select');
     const selectedChildId = activeChildSelect ? activeChildSelect.value : null;
 
-    // Logica de validare
-    let finalChildIdToSave = 0; // 0 va însemna "pentru toți copiii"
+    // 2. Setăm valoarea implicită 0 (care înseamnă comun / ambii copii - galben)
+    let finalChildIdToSave = 0; 
 
+    // Dacă ai selectat specific "Copilul activ", atunci folosim ID-ul acelui copil
     if (destinationSelect === 'active') {
         if (!selectedChildId) {
-            return alert("⚠️ Te rugăm să selectezi un copil din meniul de sus, sau alege opțiunea 'Aparține de ambii copii'!");
+            return alert("⚠️ Te rugăm să selectezi un copil din meniul de sus!");
         }
-        finalChildIdToSave = selectedChildId; // Îl salvăm strict pentru copilul activ
+        finalChildIdToSave = selectedChildId; 
     }
 
-    // 2. Extragem restul datelor din formular
+    // 3. Pachetul trimis către PHP
     const payload = {
         name: document.getElementById('friend-name').value,
         relation: document.getElementById('friend-relation').value,
         details: document.getElementById('friend-details').value,
-        child_id: finalChildIdToSave  // Aici punem ID-ul final pe care l-am calculat mai sus
+        child_id: finalChildIdToSave  // Aici se trimite 0 pentru verișori comuni
     };
 
     if (!payload.name) {
         return alert("Te rugăm să introduci numele persoanei!");
     }
 
-    // 3. Trimitem datele către Bucătar (PHP)
     try {
         const response = await fetch('api/friends.php', {
             method: 'POST',
@@ -1674,15 +1672,15 @@ async function saveFriendRelation() {
         });
 
         if (response.ok) {
-            alert("Persoană adăugată cu succes în Cercul Social!");
+            alert("Relație înregistrată cu succes!");
             
-            // Curățăm doar câmpurile de text după succes
+            // Golim inputurile
             document.getElementById('friend-name').value = '';
             document.getElementById('friend-details').value = '';
             
-            // Reîncărcăm lista de prieteni de pe ecran
-            if (typeof loadFamilyData === "function") {
-                loadFamilyData(); 
+            // Rendrează lista din nou
+            if (typeof loadFriendsList === "function") {
+                loadFriendsList(); 
             }
         } else {
             const err = await response.json();
@@ -1937,26 +1935,36 @@ async function deleteUser(userId) {
     }
 }
 async function saveFriendRelation() {
-    // 1. Luăm ID-ul copilului pe care ești selectat în acel moment în bara de sus
+    // 1. Citim valoarea din dropdown-ul de destinatar (din index.html)
+    const destinationSelect = document.getElementById('friend-child-destinatar').value;
     const activeChildSelect = document.getElementById('active-child-select');
     const selectedChildId = activeChildSelect ? activeChildSelect.value : null;
 
-    if (!selectedChildId) {
-        return alert("⚠️ Te rugăm să selectezi un copil din lista de sus înainte de a adăuga pe cineva în cercul social!");
+    // Implicit setăm 0 (ceea ce înseamnă "Comun pentru ambii copii" și va genera chenarul galben/portocaliu)
+    let finalChildIdToSave = 0; 
+
+    // Dacă utilizatorul a ales specific "Copilul selectat activ", actualizăm cu ID-ul copilului de sus
+    if (destinationSelect === 'active') {
+        if (!selectedChildId) {
+            return alert("⚠️ Te rugăm să selectezi un copil din meniul de sus înainte de a înregistra relația!");
+        }
+        finalChildIdToSave = selectedChildId; 
     }
 
-    // 2. Pregătim pachetul de date (inclusiv child_id)
+    // 2. Construim pachetul de date (payload-ul)
     const payload = {
         name: document.getElementById('friend-name').value,
         relation: document.getElementById('friend-relation').value,
         details: document.getElementById('friend-details').value,
-        child_id: selectedChildId  // <--- Aceasta este cheia magică!
+        child_id: finalChildIdToSave // Trimite 0 pentru ambii, sau ID-ul real pentru un singur copil
     };
 
-    if (!payload.name) {
-        return alert("Te rugăm să introduci numele persoanei!");
+    // 3. Validare simplă pentru a ne asigura că numele nu e gol
+    if (!payload.name || payload.name.trim() === "") {
+        return alert("Te rugăm să introduci numele persoanei sau al copilului!");
     }
 
+    // 4. Trimitem datele către Bucătar (API-ul PHP)
     try {
         const response = await fetch('api/friends.php', {
             method: 'POST',
@@ -1965,22 +1973,23 @@ async function saveFriendRelation() {
         });
 
         if (response.ok) {
-            alert("Persoană adăugată cu succes în Cercul Social al acestui copil!");
+            alert("Relație înregistrată cu succes!");
             
-            // Curățăm căsuțele
+            // Golim câmpurile formularului după succes
             document.getElementById('friend-name').value = '';
             document.getElementById('friend-details').value = '';
             
-            // Reîncărcăm datele familiei
-            if (typeof loadFamilyData === "function") {
-                loadFamilyData(); 
+            // Reîncărcăm instant interfața cu cercul social ca să apară noul element
+            if (typeof loadFriendsList === "function") {
+                loadFriendsList(); 
             }
         } else {
             const err = await response.json();
-            alert("Eroare: " + (err.error || "Nu s-a putut salva."));
+            alert("Eroare de la server: " + (err.error || "Nu s-a putut salva."));
         }
     } catch (e) {
         console.error("[Friends Save] Eroare:", e);
+        alert("A apărut o eroare neașteptată. Verifică consola (F12).");
     }
 }
 async function loadFriendsList() {
@@ -2011,9 +2020,11 @@ async function loadFriendsList() {
             } else {
                 html += '<ul style="list-style: none; padding: 0;">';
                 friends.forEach(f => {
-                    const badgeColor = f.child_id == 0 ? '#f39c12' : '#1abc9c'; // Culoare diferită pentru verișori comuni
+                    // Setăm culoarea chenarului în funcție de child_id (0 înseamnă comun/galben)
+                    const badgeColor = (f.child_id == 0 || f.child_id === "0") ? '#f39c12' : '#1abc9c'; 
+                    
                     html += `
-                        <li class="item family-item" style="border-left: 4px solid ${badgeColor}; display: flex; justify-content: space-between; align-items: center;">
+                        <li class="item family-item" style="border-left: 4px solid ${badgeColor}; display: flex; justify-content: space-between; align-items: center; background: white; margin-bottom: 10px; padding: 12px; border-radius: 8px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
                             <div>
                                 <strong>🤝 ${f.name}</strong> 
                                 <span class="badge" style="background: #f0f3f4; color: #333; margin-left: 10px;">${f.relation}</span>
@@ -2029,6 +2040,51 @@ async function loadFriendsList() {
         }
     } catch (e) {
         console.error("[Cerc Social] Eroare la preluare date:", e);
+    }
+}
+// --- FUNCȚIA PENTRU ȘTERGEREA UNUI COPIL ---
+async function executeChildDeletion(childId) {
+    const isConfirmed = confirm("⚠️ Ești sigur că vrei să ștergi acest copil? Acțiunea este ireversibilă și îi va șterge istoricul!");
+    
+    if (!isConfirmed) return;
+
+    try {
+        const response = await fetch(`api/admin.php?type=children&id=${childId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            alert("Copil șters cu succes!");
+            // Reîmprospătăm instant tabelele din Admin
+            if (typeof loadAdminData === "function") loadAdminData(); 
+        } else {
+            alert("Eroare la ștergerea copilului.");
+        }
+    } catch (error) {
+        console.error("[Admin Delete] Eroare ștergere copil:", error);
+    }
+}
+
+// --- FUNCȚIA PENTRU ȘTERGEREA DIN CERCUL SOCIAL ---
+async function executeFriendDeletion(friendId) {
+    const isConfirmed = confirm("⚠️ Ești sigur că vrei să ștergi această persoană din Cercul Social?");
+    
+    if (!isConfirmed) return;
+
+    try {
+        const response = await fetch(`api/friends.php?id=${friendId}`, {
+            method: 'DELETE'
+        });
+
+        if (response.ok) {
+            alert("Persoană ștearsă din cercul social!");
+            // Reîmprospătăm instant tabelele din Admin
+            if (typeof loadAdminData === "function") loadAdminData(); 
+        } else {
+            alert("Eroare la ștergerea relației.");
+        }
+    } catch (error) {
+        console.error("[Social Delete] Eroare ștergere relație:", error);
     }
 }
 // Verificare periodică (opțional) sau apel direct
