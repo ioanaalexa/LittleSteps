@@ -78,7 +78,6 @@
                         <label for="active-child-select">👶 Copil activ:</label>
                         <select id="active-child-select" onchange="updateSelectedChild()">
                             <option value="">Se încarcă copiii...</option>
-                            <option value="">skibidi gyatt</option>
                         </select>
                     </div>
                 </div>
@@ -330,22 +329,55 @@
   </div>
 </section>         
             <section id="section-admin" class="app-section" style="display:none;">
-                <div class="card-container">
-                    <h3>🛡️ Panou Control Administrator</h3>
-                    <table class="admin-table" style="width:100%;">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Email</th>
-                                <th>Nume</th>
-                                <th>Rol</th>
-                                <th>Acțiuni</th>
-                            </tr>
-                        </thead>
-                        <tbody id="admin-user-list"></tbody>
-                    </table>
-                </div>
-            </section>
+    <div class="card-container">
+        
+        <h3>🛡️ Panou Control Administrator</h3>
+        <table class="admin-table" style="width:100%;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Email</th>
+                    <th>Nume</th>
+                    <th>Rol</th>
+                    <th>Acțiuni</th>
+                </tr>
+            </thead>
+            <tbody id="admin-user-list"></tbody>
+        </table>
+
+        <hr style="margin: 40px 0; border: 0; border-top: 2px dashed #eee;">
+
+        <h3>👶 Administrare Copii</h3>
+        <table class="admin-table" style="width:100%;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nume Copil</th>
+                    <th>Data Nașterii</th>
+                    <th>Acțiuni</th>
+                </tr>
+            </thead>
+            <tbody id="admin-children-list"></tbody>
+        </table>
+
+        <hr style="margin: 40px 0; border: 0; border-top: 2px dashed #eee;">
+
+        <h3>🤝 Administrare Cerc Social & Rude</h3>
+        <table class="admin-table" style="width:100%;">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Nume</th>
+                    <th>Relație</th>
+                    <th>Detalii/Grupă</th>
+                    <th>Acțiuni</th>
+                </tr>
+            </thead>
+            <tbody id="admin-friends-list"></tbody>
+        </table>
+
+    </div>
+</section>
         </main>
     </div>
 

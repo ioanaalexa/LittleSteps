@@ -610,7 +610,7 @@ async function loadFamilyData() {
         const response = await fetch('api/family.php'); 
         const data = await response.json();
 
-        // 1. Randare Părinți
+        // 1. Randare Părinți (Vizual)
         let htmlContent = '<h4 class="sub-header">Părinți și Tutori</h4>';
         data.parents.forEach(p => {
             const genderEmoji = (p.gender === 'F') ? '👩' : '👨';
@@ -621,11 +621,18 @@ async function loadFamilyData() {
                 </div>`;
         });
 
-        // 2. Randare Copii
+        // 2. Randare Copii (Vizual) + REPARAȚIA MENIULUI
         htmlContent += '<h4 class="sub-header" style="margin-top:25px;">Copii Înregistrați</h4>';
+        
+        // Curățăm meniul de sus înainte să băgăm opțiunile noi, ca să nu se dubleze
+        if (childSelector) {
+            childSelector.innerHTML = '';
+        }
+
         data.children.forEach(c => {
+            // Partea vizuală pentru pagina de familie
             const genderEmoji = (c.gender === 'F') ? '👧' : '👦';
-            const ageDisplay = getAgeString(c.birthday);
+            const ageDisplay = typeof getAgeString === 'function' ? getAgeString(c.birthday) : c.birthday;
 
             htmlContent += `
                 <div class="item family-item child-item">
@@ -633,38 +640,25 @@ async function loadFamilyData() {
                     <span class="age-badge">(${ageDisplay})</span>
                     <br><small>Data nașterii: ${c.birthday}</small>
                 </div>`;
+                
+            // REPARAȚIA: Adăugăm copilul înapoi în meniul drop-down de sus!
+            if (childSelector) {
+                childSelector.innerHTML += `<option value="${c.id}">${c.name}</option>`;
+            }
         });
-        
-        // --- MODIFICARE STRICTĂ AICI ---
-        // Lăsăm din start zona fixă pentru prieteni la final, ca să nu fie ștearsă de innerHTML
-        htmlContent += '<div id="zona-prieteni-sigura"></div>';
 
+        // 3. Punem pe ecran Părinții și Copiii
         if (listDisplay) {
             listDisplay.innerHTML = htmlContent;
         }
 
-        // 3. Actualizare Selector Dropdown
-        if (data.children.length > 0) {
-            childSelector.innerHTML = data.children.map(c => {
-                const emoji = (c.gender === 'F') ? '👧' : '👦';
-                const isSelected = (c.id == selectedChildId) ? 'selected' : '';
-                return `<option value="${c.id}" ${isSelected}>${emoji} ${c.name}</option>`;
-            }).join('');
-            
-            // Setăm automat primul copil dacă nu e selectat nimic
-            if (!selectedChildId) {
-                selectedChildId = data.children[0].id;
-                loadTimeline();
-            }
-            
-            // --- MODIFICARE STRICTĂ AICI ---
-            // Forțăm încărcarea prietenilor imediat ce s-au afișat părinții/copiii la refresh
-            loadFriendsData();
-        } else {
-            childSelector.innerHTML = '<option value="">Adăugați un copil...</option>';
+        // 4. MAGIA NOUĂ: Acum că am terminat cu familia, încărcăm Cercul Social pentru copilul selectat!
+        if (typeof loadFriendsList === "function") {
+            loadFriendsList();
         }
-    } catch (err) {
-        console.error("[Family] Eroare încărcare date:", err);
+
+    } catch (error) {
+        console.error("[Family Data] Eroare la încărcare:", error);
     }
 }
 
@@ -679,14 +673,25 @@ function updateSelectedChild() {
     
     console.log("[System] Copil activ schimbat la ID: " + selectedChildId);
     
-    // Reîncărcăm modulele dependente de ID-ul copilului
-    loadTimeline();
-    loadMedicalRecords();
-    loadGallery();
-    loadEvolutionData();
-    loadVaccines();
-    loadTeeth();
-    loadFriendsData();
+    // Reîncărcăm modulele (verificăm să existe funcțiile ca să nu dea erori)
+    if (typeof loadTimeline === "function") loadTimeline();
+    if (typeof loadMedicalRecords === "function") loadMedicalRecords();
+    if (typeof loadGallery === "function") loadGallery();
+    if (typeof loadEvolutionData === "function") loadEvolutionData();
+    if (typeof loadVaccines === "function") loadVaccines();
+    if (typeof loadTeeth === "function") loadTeeth();
+    
+    // REPARAȚIA: Forțăm actualizarea Cercului Social!
+    if (typeof loadFriendsList === "function") {
+        // Punem un text temporar de "încărcare" ca să vezi clar că reacționează
+        const friendsDisplay = document.getElementById('friends-list-display');
+        if (friendsDisplay) {
+            friendsDisplay.innerHTML = '<span style="color:gray; font-style:italic;">Se actualizează cercul social... ⏳</span>';
+        }
+        
+        // Strigăm funcția care aduce noii prieteni
+        loadFriendsList(); 
+    }
 }
 
 /**
@@ -1505,38 +1510,84 @@ async function saveEvolution(category) {
  * Prelucrează lista utilizatorilor (doar pentru utilizatori cu rol Admin).
  */
 async function loadAdminData() {
-    const tableBody = document.getElementById('admin-user-list');
+    const userTableBody = document.getElementById('admin-user-list');
+    const childTableBody = document.getElementById('admin-children-list');
+    const friendTableBody = document.getElementById('admin-friends-list'); // <-- Adăugat pentru Cercul Social
     
+    // 1. ÎNCĂRCĂM ADULȚII (Părinții)
     try {
-        const response = await fetch('api/admin.php');
-        
-        if (!response.ok) {
-            tableBody.innerHTML = '<tr><td colspan="5">Acces refuzat: Drepturi insuficiente.</td></tr>';
-            return;
+        const responseUsers = await fetch('api/admin.php');
+        if (responseUsers.ok) {
+            const usersList = await responseUsers.json();
+            userTableBody.innerHTML = usersList.map(u => `
+                <tr class="admin-row">
+                    <td>${u.id}</td>
+                    <td>${u.email}</td>
+                    <td>${u.fullname || '<i>Nume lipsă</i>'}</td>
+                    <td><span class="badge ${u.role}">${u.role.toUpperCase()}</span></td>
+                    <td>
+                        <button class="btn-delete" onclick="executeUserDeletion(${u.id})" style="background: var(--danger, #ff4757); color: white; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer;">
+                            Șterge Cont
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
         }
-
-        const usersList = await response.json();
-        
-        tableBody.innerHTML = usersList.map(u => `
-            <tr class="admin-row">
-                <td>${u.id}</td>
-                <td>${u.email}</td>
-                <td>${u.fullname || '<i>Nume lipsă</i>'}</td>
-                <td><span class="badge ${u.role}">${u.role.toUpperCase()}</span></td>
-                <td>
-                    <button class="btn-delete" onclick="executeUserDeletion(${u.id})">
-                        Șterge Cont
-                    </button>
-                </td>
-            </tr>
-        `).join('');
-        
     } catch (e) {
-        console.error("[Admin Panel] Eroare la preluarea bazei de date utilizatori:", e);
+        console.error("[Admin Panel] Eroare la preluarea adulților:", e);
     }
 
-   
-    loadSecurityLogs();
+    // 2. ÎNCĂRCĂM COPIII
+    try {
+        const responseChildren = await fetch('api/admin.php?type=children');
+        if (responseChildren.ok) {
+            const childrenList = await responseChildren.json();
+            childTableBody.innerHTML = childrenList.map(c => `
+                <tr class="admin-row">
+                    <td>${c.id}</td>
+                    <td><strong>${c.name}</strong></td>
+                    <td>${c.birthday || '-'}</td>
+                    <td>
+                        <button onclick="executeChildDeletion(${c.id})" style="background: var(--danger, #ff4757); color: white; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer;">
+                            Șterge Copil
+                        </button>
+                    </td>
+                </tr>
+            `).join('');
+        }
+    } catch (e) {
+        console.error("[Admin Panel] Eroare la preluarea copiilor:", e);
+    }
+
+    // 3. ÎNCĂRCĂM CERCUL SOCIAL PENTRU ADMINISTRARE
+    try {
+        const responseFriends = await fetch('api/friends.php');
+        if (responseFriends.ok) {
+            const friendsList = await responseFriends.json();
+            if (friendTableBody) {
+                friendTableBody.innerHTML = friendsList.map(f => `
+                    <tr class="admin-row">
+                        <td>${f.id}</td>
+                        <td><strong>${f.name}</strong></td>
+                        <td><span class="badge relationship">${f.relation}</span></td>
+                        <td>${f.details || '-'}</td>
+                        <td>
+                            <button onclick="executeFriendDeletion(${f.id})" style="background: var(--danger, #ff4757); color: white; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer;">
+                                Șterge Relație
+                            </button>
+                        </td>
+                    </tr>
+                `).join('');
+            }
+        }
+    } catch (e) {
+        console.error("[Admin Panel] Eroare preluare cerc social:", e);
+    }
+
+    // Dacă ai și logurile de securitate, le lăsăm să se încarce
+    if (typeof loadSecurityLogs === "function") {
+        loadSecurityLogs();
+    }
 }
 /**
  * Lansează procedura de ștergere a unui cont.
@@ -1584,55 +1635,62 @@ function exportData(format) {
 /**
  * Salvează o relație nouă cu un alt copil în localStorage
  */
-function saveFriendRelation() {
-    const selectorDestinatar = document.getElementById('friend-child-destinatar').value;
+async function saveFriendRelation() {
+    // 1. Aflăm CUI vrem să îi asociem relația, citind noul tău selector din HTML
+    const destinationSelect = document.getElementById('friend-child-destinatar').value;
     
-    // Preluăm ID-ul copilului selectat global în bara de sus
-    const childSelectorGlobal = document.getElementById('active-child-select');
-    const currentChildId = childSelectorGlobal ? childSelectorGlobal.value : selectedChildId;
+    // Luăm ID-ul copilului curent (cel activ, din bara de sus a aplicației)
+    const activeChildSelect = document.getElementById('active-child-select');
+    const selectedChildId = activeChildSelect ? activeChildSelect.value : null;
 
-    if (!currentChildId) {
-        return alert("Vă rugăm să aveți un copil activ selectat în aplicație!");
+    // Logica de validare
+    let finalChildIdToSave = 0; // 0 va însemna "pentru toți copiii"
+
+    if (destinationSelect === 'active') {
+        if (!selectedChildId) {
+            return alert("⚠️ Te rugăm să selectezi un copil din meniul de sus, sau alege opțiunea 'Aparține de ambii copii'!");
+        }
+        finalChildIdToSave = selectedChildId; // Îl salvăm strict pentru copilul activ
     }
 
-    const name = document.getElementById('friend-name').value;
-    const relation = document.getElementById('friend-relation').value;
-    const details = document.getElementById('friend-details').value || "Fără detalii";
+    // 2. Extragem restul datelor din formular
+    const payload = {
+        name: document.getElementById('friend-name').value,
+        relation: document.getElementById('friend-relation').value,
+        details: document.getElementById('friend-details').value,
+        child_id: finalChildIdToSave  // Aici punem ID-ul final pe care l-am calculat mai sus
+    };
 
-    if (!name) return alert("Vă rugăm să introduceți numele copilului/prietenului!");
-
-    let friends = JSON.parse(localStorage.getItem('littleStepsFriends')) || [];
-
-    // Logica de mapare în funcție de dropdown-ul din HTML
-    let finalChildId = currentChildId;
-    let isSharedForAll = false;
-
-    if (selectorDestinatar === 'all' || relation === "Verișor / Verișoară") {
-        isSharedForAll = true; 
-        finalChildId = "ALL_CHILDREN"; // Îi dăm un ID special global
+    if (!payload.name) {
+        return alert("Te rugăm să introduci numele persoanei!");
     }
 
-    // Adăugăm obiectul complet în localStorage
-    friends.push({
-        childId: finalChildId,
-        name: name,
-        relation: relation,
-        details: details,
-        isShared: isSharedForAll
-    });
+    // 3. Trimitem datele către Bucătar (PHP)
+    try {
+        const response = await fetch('api/friends.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
 
-    localStorage.setItem('littleStepsFriends', JSON.stringify(friends));
-    
-    if (typeof addSecurityLog === "function") {
-        addSecurityLog(`A adăugat relația socială: ${name} (${relation})`);
+        if (response.ok) {
+            alert("Persoană adăugată cu succes în Cercul Social!");
+            
+            // Curățăm doar câmpurile de text după succes
+            document.getElementById('friend-name').value = '';
+            document.getElementById('friend-details').value = '';
+            
+            // Reîncărcăm lista de prieteni de pe ecran
+            if (typeof loadFamilyData === "function") {
+                loadFamilyData(); 
+            }
+        } else {
+            const err = await response.json();
+            alert("Eroare: " + (err.error || "Nu s-a putut salva."));
+        }
+    } catch (e) {
+        console.error("[Friends Save] Eroare:", e);
     }
-
-    // Resetăm formularul
-    document.getElementById('friend-name').value = "";
-    document.getElementById('friend-details').value = "";
-
-    alert("Relația socială a fost înregistrată cu succes!");
-    loadFriendsData(); // Reîncărcăm lista vizuală ca să apară pe ecran
 }
 /**
  * Încarcă și afișează cercul social în funcție de copilul selectat
@@ -1848,6 +1906,130 @@ document.addEventListener('DOMContentLoaded', () => {
     initializeWebNotifications();
     checkLoginStatus();
 });
+async function deleteUser(userId) {
+    // 1. Paznicul de siguranță (întreabă utilizatorul de două ori)
+    const isConfirmed = confirm("⚠️ Ești sigur că vrei să ștergi acest membru? Acțiunea este ireversibilă și îi va șterge toate datele!");
+    
+    if (!isConfirmed) {
+        return; // Dacă apasă Cancel, ne oprim aici.
+    }
 
+    // 2. Trimitem comanda către Bucătar (PHP)
+    try {
+        // Folosim metoda 'DELETE' - o metodă specială HTTP pentru ștergeri
+        const response = await fetch(`api/admin.php?id=${userId}`, {
+            method: 'DELETE'
+        });
+
+        const result = await response.json();
+
+        // 3. Verificăm răspunsul
+        if (response.ok) {
+            alert("Membru șters cu succes!");
+            // Reîncărcăm tabelul din panoul de admin ca să dispară vizual rândul
+            loadAdminUsers(); 
+        } else {
+            alert("Eroare la ștergere: " + (result.error || "Problemă necunoscută."));
+        }
+    } catch (error) {
+        console.error("[Admin Delete] Eroare:", error);
+        alert("A apărut o eroare de conexiune.");
+    }
+}
+async function saveFriendRelation() {
+    // 1. Luăm ID-ul copilului pe care ești selectat în acel moment în bara de sus
+    const activeChildSelect = document.getElementById('active-child-select');
+    const selectedChildId = activeChildSelect ? activeChildSelect.value : null;
+
+    if (!selectedChildId) {
+        return alert("⚠️ Te rugăm să selectezi un copil din lista de sus înainte de a adăuga pe cineva în cercul social!");
+    }
+
+    // 2. Pregătim pachetul de date (inclusiv child_id)
+    const payload = {
+        name: document.getElementById('friend-name').value,
+        relation: document.getElementById('friend-relation').value,
+        details: document.getElementById('friend-details').value,
+        child_id: selectedChildId  // <--- Aceasta este cheia magică!
+    };
+
+    if (!payload.name) {
+        return alert("Te rugăm să introduci numele persoanei!");
+    }
+
+    try {
+        const response = await fetch('api/friends.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+        });
+
+        if (response.ok) {
+            alert("Persoană adăugată cu succes în Cercul Social al acestui copil!");
+            
+            // Curățăm căsuțele
+            document.getElementById('friend-name').value = '';
+            document.getElementById('friend-details').value = '';
+            
+            // Reîncărcăm datele familiei
+            if (typeof loadFamilyData === "function") {
+                loadFamilyData(); 
+            }
+        } else {
+            const err = await response.json();
+            alert("Eroare: " + (err.error || "Nu s-a putut salva."));
+        }
+    } catch (e) {
+        console.error("[Friends Save] Eroare:", e);
+    }
+}
+async function loadFriendsList() {
+    const friendsDisplay = document.getElementById('friends-list-display');
+    const activeChildSelect = document.getElementById('active-child-select');
+    
+    // Dacă nu avem unde să afișăm sau nu s-a încărcat meniul, ne oprim
+    if (!friendsDisplay || !activeChildSelect) return;
+
+    const selectedChildId = activeChildSelect.value;
+
+    if (!selectedChildId) {
+        friendsDisplay.innerHTML = '<p style="color: gray; font-style: italic;">Selectează un copil pentru a-i vedea cercul social.</p>';
+        return;
+    }
+
+    try {
+        const response = await fetch(`api/friends.php?child_id=${selectedChildId}`);
+        
+        if (response.ok) {
+            const friends = await response.json();
+            
+            // Desenăm titlul indiferent dacă are sau nu prieteni
+            let html = '<h4 class="sub-header" style="margin-top:25px; color: #16a085;">👦 Cerc Social & Colegi</h4>';
+
+            if (friends.length === 0) {
+                html += '<p style="color: gray; font-style: italic; font-size: 0.9rem;">Nu au fost adăugate relații sociale pentru acest copil.</p>';
+            } else {
+                html += '<ul style="list-style: none; padding: 0;">';
+                friends.forEach(f => {
+                    const badgeColor = f.child_id == 0 ? '#f39c12' : '#1abc9c'; // Culoare diferită pentru verișori comuni
+                    html += `
+                        <li class="item family-item" style="border-left: 4px solid ${badgeColor}; display: flex; justify-content: space-between; align-items: center;">
+                            <div>
+                                <strong>🤝 ${f.name}</strong> 
+                                <span class="badge" style="background: #f0f3f4; color: #333; margin-left: 10px;">${f.relation}</span>
+                                <div style="font-size: 0.85rem; color: #7f8c8d; margin-top: 5px;">📍 ${f.details || 'Fără detalii'}</div>
+                            </div>
+                        </li>
+                    `;
+                });
+                html += '</ul>';
+            }
+
+            friendsDisplay.innerHTML = html;
+        }
+    } catch (e) {
+        console.error("[Cerc Social] Eroare la preluare date:", e);
+    }
+}
 // Verificare periodică (opțional) sau apel direct
 // checkLoginStatus();
