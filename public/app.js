@@ -1,6 +1,4 @@
-
-    ///Verifica daca emailul respecta forma 
-        function esteEmailValid(email) {
+    function esteEmailValid(email) {
     const formulaRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return formulaRegex.test(email);
 }
