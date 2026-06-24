@@ -891,3 +891,9 @@ button:active {
         grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
     }
 }
+#activity-list {
+    display: flex;
+    flex-direction: column; /* Așează cardurile unul sub altul */
+    gap: 15px; /* Lasă spațiu între ele */
+    width: 100%;
+}

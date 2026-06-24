@@ -25,11 +25,11 @@ if ($method === 'GET') {
     $child_id = $_GET['child_id'] ?? null;
     
     if ($child_id) {
-        // MODIFICARE AICI: Caută prietenii lui Gigel (ex: ID 2) SAU prietenii comuni (ID 0)
+        // cauta prietenii sau prietenii comuni
         $stmt = $pdo->prepare("SELECT * FROM friends WHERE family_id = ? AND (child_id = ? OR child_id = 0)");
         $stmt->execute([$current_family_id, $child_id]);
     } else {
-        // Pentru panoul de Administrare (aduce tot)
+        //pentru panoul de adminstrare aduce tot
         $stmt = $pdo->prepare("SELECT * FROM friends WHERE family_id = ?");
         $stmt->execute([$current_family_id]);
     }

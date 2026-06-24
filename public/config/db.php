@@ -1,8 +1,4 @@
 <?php
-/**
- * config/db.php
- * Structura actualizată pentru suport Gen (M/F), filtrare activități și Familii Multiple.
- */
 
 try {
     $dbPath = __DIR__ . '/../data/database.sqlite';
@@ -10,18 +6,13 @@ try {
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
 
-    // =========================================================================
-    // NOU: 0. Tabel pentru Familii (Asigură izolarea utilizatorilor în grupuri)
-    // =========================================================================
     $pdo->exec("CREATE TABLE IF NOT EXISTS families (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         family_name TEXT NOT NULL,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
 
-    // 1. Tabel Utilizatori (Părinți/Admini)
-    // Am adăugat coloana 'gender' pentru a distinge între 👨 (M) și 👩 (F)
-    // NOU: S-a adăugat coloana 'family_id' pentru a asocia utilizatorul de o familie unică
+    //Utilizatori
     $pdo->exec("CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         email TEXT UNIQUE NOT NULL,
@@ -33,9 +24,7 @@ try {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
 
-    // 2. Tabel Copii (Membrii familiei monitorizați)
-    // Coloana 'gender' va determina dacă afișăm 👦 (M) sau 👧 (F)
-    // NOU: S-a adăugat coloana 'family_id' pentru ca acești copii să apară doar în familia lor
+    // copii
     $pdo->exec("CREATE TABLE IF NOT EXISTS children (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         name TEXT NOT NULL,
@@ -45,8 +34,7 @@ try {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
 
-    // 3. Tabel Activități (Hrană, Somn)
-    // Filtrarea se va face strict prin child_id
+    // activitati
     $pdo->exec("CREATE TABLE IF NOT EXISTS activities (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         child_id INTEGER NOT NULL, 
@@ -56,7 +44,7 @@ try {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
 
-    // 4. Tabel Istoric Medical
+    // istoric medical
     $pdo->exec("CREATE TABLE IF NOT EXISTS medical_history (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         child_id INTEGER NOT NULL,
@@ -66,7 +54,7 @@ try {
         doctor TEXT
     )");
 
-    // 5. Tabel Multimedia (Galerie)
+    //multimedia
     $pdo->exec("CREATE TABLE IF NOT EXISTS media (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         child_id INTEGER NOT NULL,
@@ -76,7 +64,7 @@ try {
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     )");
 
-    // Tabel Evoluție (Înălțime/Greutate)
+    // evolutie
     $pdo->exec("CREATE TABLE IF NOT EXISTS growth (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         child_id INTEGER NOT NULL,
@@ -85,7 +73,7 @@ try {
         recorded_date DATE NOT NULL
     )");
 
-    // Tabel Milestones (Momente importante)
+    // milestones
     $pdo->exec("CREATE TABLE IF NOT EXISTS milestones (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         child_id INTEGER NOT NULL,
@@ -93,7 +81,23 @@ try {
         milestone_date DATE NOT NULL,
         notes TEXT
     )");
+    // vacinuri
+    $pdo->exec("CREATE TABLE IF NOT EXISTS vaccines (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        child_id INTEGER NOT NULL,
+        name TEXT NOT NULL,
+        age_tag TEXT,
+        status INTEGER DEFAULT 0,
+        date_administered DATE
+    )");
 
+    //dentitie
+    $pdo->exec("CREATE TABLE IF NOT EXISTS teeth (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        child_id INTEGER NOT NULL,
+        tooth_id TEXT NOT NULL,
+        eruption_date DATE
+    )");
 } catch (PDOException $e) {
     die("Eroare critică la baza de date: " . $e->getMessage());
 }

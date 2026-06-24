@@ -3,7 +3,6 @@ session_start();
 require_once '../config/db.php';
 require_once 'api_helper.php';
 
-// Sincronizăm ora
 date_default_timezone_set('Europe/Bucharest');
 
 if (!isset($_SESSION['user_id'])) {
@@ -13,8 +12,6 @@ if (!isset($_SESSION['user_id'])) {
 }
 
 $method = $_SERVER['REQUEST_METHOD'];
-
-// creaza tabel daca nu exista 
 
 $pdo->exec("CREATE TABLE IF NOT EXISTS vaccines (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -33,13 +30,11 @@ if ($method === 'GET') {
         exit;
     }
     
-    // Verificăm dacă are deja lista generată
     $stmt = $pdo->prepare("SELECT * FROM vaccines WHERE child_id = ?");
     $stmt->execute([$child_id]);
     $list = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     if (empty($list)) {
-        // Generăm schema standard de vaccinare din România
         $default_vaccines = [
             ['BCG', 'Maternitate (2-7 zile)'],
             ['Hepatita B', 'Maternitate (24h)'],

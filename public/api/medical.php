@@ -3,19 +3,16 @@ session_start();
 require_once '../config/db.php';
 require_once 'api_helper.php';
 
-// FIX: Setăm fusul orar pentru România
+
 date_default_timezone_set('Europe/Bucharest');
 
-// Verificăm dacă utilizatorul este logat
 if (!isset($_SESSION['user_id'])) {
     sendResponse(['error' => 'Neautorizat'], 401);
 }
 
 $method = $_SERVER['REQUEST_METHOD'];
 
-/**
- * --- SALVARE EVENIMENT MEDICAL (POST) ---
- */
+///salvare eveniment local
 if ($method === 'POST') {
     $data = getJsonInput();
     
@@ -28,11 +25,10 @@ if ($method === 'POST') {
     }
 
     try {
-        // Salvăm evenimentul medical
         $stmt = $pdo->prepare("INSERT INTO medical_history (child_id, event_date, diagnosis, treatment, doctor) VALUES (?, ?, ?, ?, ?)");
         $stmt->execute([
             $data['child_id'], 
-            $data['date'], // Data aleasă de tine în formular (YYYY-MM-DD)
+            $data['date'], 
             $data['diagnosis'], 
             $data['treatment'] ?? '', 
             $data['doctor'] ?? ''
@@ -44,9 +40,7 @@ if ($method === 'POST') {
     }
 }
 
-/**
- * --- CITIRE ISTORIC MEDICAL (GET) ---
- */
+///citire istoric medical
 if ($method === 'GET') {
     $child_id = $_GET['child_id'] ?? null;
 
@@ -54,7 +48,7 @@ if ($method === 'GET') {
         sendResponse(['error' => 'ID-ul copilului nu a fost furnizat.'], 400);
     }
 
-    // Filtrăm istoricul medical pentru copilul selectat
+    ///filtrare istoric medical
     $stmt = $pdo->prepare("SELECT * FROM medical_history WHERE child_id = ? ORDER BY event_date DESC");
     $stmt->execute([$child_id]);
     

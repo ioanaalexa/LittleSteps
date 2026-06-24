@@ -1,70 +1,24 @@
-/**
- * =============================================================================
- * LITTLESTEPS - APP.JS                          
- * =============================================================================
- * AUTOR: Alexa Ioana & Miron Andrei
- * * DESCRIERE:
- * Acest fișier conține întreaga logică de frontend a aplicației LittleSteps.
- * Gestionează interacțiunea cu utilizatorul, comunicarea cu API-ul PHP (REST),
- * administrarea cookie-urilor pentru preferințe, randarea graficelor (Chart.js)
- * și procesarea timeline-ului în timp real.
- * =============================================================================
- */
-/**
- * =============================================================================
- * LITTLESTEPS - APP.JS                          
- * =============================================================================
- * * PROIECT: Sistem de Management și Monitorizare pentru Evoluția Copilului
- * MATERIE: Tehnologii Web / Dezvoltare Aplicații Web
- * AUTOR: Alexa Ioana
- * VERSIUNE: 2.2 (Build: 2026.05.15)
- * * DESCRIERE:
- * Acest fișier conține întreaga logică de frontend a aplicației LittleSteps.
- * Gestionează interacțiunea cu utilizatorul, comunicarea cu API-ul PHP (REST),
- * administrarea cookie-urilor pentru preferințe, randarea graficelor (Chart.js)
- * și procesarea timeline-ului în timp real.
- * * IMPLEMENTĂRI RECENTE:
- * - Sistem de consimțământ Cookie (GDPR Compliance)
- * - Persistență temă (Dark Mode) prin module Cookie
- * - Monitorizare Dentiție (Interfață interactivă)
- * - Monitorizare Scutece (Umed/Murdar/Ambele)
- * - Cronometru somn în timp real
- * =============================================================================
- */
+
     ///Verifica daca emailul respecta forma 
-    // Adaugă asta sus de tot în app.js
         function esteEmailValid(email) {
     const formulaRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return formulaRegex.test(email);
 }
-// Funcție care verifică dacă data este reală, nu e în viitor și nu e aberantă (ex: anul 1000)
 function esteDataValida(dataIntrodusa) {
-    // 1. Verificăm dacă a lăsat căsuța goală
     if (!dataIntrodusa) return false; 
 
     const data = new Date(dataIntrodusa);
     const dataDeAzi = new Date();
     const limitaJos = new Date("2000-01-01");
 
-    // 2. Verificăm dacă e un format de dată stricat complet
     if (isNaN(data.getTime())) return false;
 
-    // 3. Verificăm dacă e în viitor
     if (data > dataDeAzi) return false;
 
-    // 4. Verificăm dacă e mai veche de anul 2000
     if (data < limitaJos) return false;
 
-    // Dacă a trecut de toate testele, e o dată validă!
     return true; 
 }
-/**
- * -----------------------------------------------------------------------------
- * --- UTILITARE PENTRU MODULELE COOKIE ---
- * -----------------------------------------------------------------------------
- * Folosim cookie-uri pentru a respecta cerintele de stocare a datelor pe
- * partea de client, accesibile si de catre server (PHP)
- */
 
 /**
  * seteaza un cookie in browserul utilizatorului
@@ -77,14 +31,6 @@ function setCookie(name, value, days) {
 }
 
 /**
- * -----------------------------------------------------------------------------
- * --- UTILITARE PENTRU MODULELE COOKIE ---
- * -----------------------------------------------------------------------------
- * Folosim cookie-uri pentru a respecta cerințele de stocare a datelor pe
- * partea de client, accesibile și de către server (PHP).
- */
-
-/**
  * Setează un cookie în browserul utilizatorului.
  * * @param {string} name - Numele identificatorului pentru cookie.
  * @param {string} value - Valoarea ce urmează a fi stocată.
@@ -93,12 +39,10 @@ function setCookie(name, value, days) {
 function setCookie(name, value, days) {
     const date = new Date();
     
-    // Calculăm data de expirare transformând zilele în milisecunde
     date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
     
     let expires = "expires=" + date.toUTCString();
     
-    // Construim string-ul final pentru document.cookie
     document.cookie = name + "=" + value + ";" + expires + ";path=/";
     
     console.log(`[Cookie System] S-a setat cookie: ${name}`);
@@ -116,12 +60,10 @@ function getCookie(name) {
     for (let i = 0; i < ca.length; i++) {
         let c = ca[i];
         
-        // Eliminăm spațiile libere de la începutul string-ului
         while (c.charAt(0) == ' ') {
             c = c.substring(1, c.length);
         }
         
-        // Dacă găsim potrivirea, returnăm valoarea extrasă
         if (c.indexOf(nameEQ) == 0) {
             return c.substring(nameEQ.length, c.length);
         }
@@ -131,32 +73,17 @@ function getCookie(name) {
 }
 
 
-/**
- * -----------------------------------------------------------------------------
- * --- VARIABILE DE STARE GLOBALE ---
- * -----------------------------------------------------------------------------
- */
-
-// ID-ul copilului selectat curent în interfață
+// Id ul copilului
 let selectedChildId = null; 
 
-// Instanța obiectului Chart.js pentru a permite distrugerea/recrearea graficului
+// graful
 let growthChart = null; 
 
-// Reținem timpul de start al somnului în localStorage pentru persistență la refresh
+//retine somnul in local storage 
 let sleepStartTime = localStorage.getItem('sleepStartTime'); 
 
 
-/**
- * -----------------------------------------------------------------------------
- * --- SISTEM DARK MODE ---
- * -----------------------------------------------------------------------------
- */
-
-/**
- * Schimbă tema vizuală între Light și Dark.
- * Salvează preferința într-un cookie pentru a fi reținută pe termen lung.
- */
+///darkmode
 function toggleDarkMode() {
     const rootElement = document.documentElement;
     const currentTheme = rootElement.getAttribute('data-theme');
@@ -173,9 +100,6 @@ function toggleDarkMode() {
     console.log(`[UI] Tema a fost schimbată în: ${newTheme}`);
 }
 
-/**
- * Verificare inițială a temei la încărcarea paginii.
- */
 (function initializeTheme() {
     const savedTheme = getCookie("theme");
     
@@ -185,16 +109,6 @@ function toggleDarkMode() {
 })();
 
 
-/**
- * -----------------------------------------------------------------------------
- * --- GESTIONARE CONSIMȚĂMÂNT GDPR ---
- * -----------------------------------------------------------------------------
- */
-
-/**
- * Verifică dacă utilizatorul a acceptat deja politica de module cookie.
- * Dacă nu, afișează bannerul de informare.
- */
 function checkCookieConsent() {
     const consent = getCookie("cookie_consent");
     
@@ -206,9 +120,6 @@ function checkCookieConsent() {
     }
 }
 
-/**
- * Acțiunea executată la apăsarea butonului "Accept" din banner.
- */
 function acceptCookies() {
     // Salvăm consimțământul pentru 30 de zile
     setCookie("cookie_consent", "accepted", 30);
@@ -223,13 +134,7 @@ function acceptCookies() {
 
 
 /**
- * -----------------------------------------------------------------------------
- * --- UTILITARE CALCUL ȘI FORMATARE ---
- * -----------------------------------------------------------------------------
- */
-
-/**
- * Calculează vârsta exactă (Ani, Luni, Zile) pornind de la o dată de naștere.
+ * Calculeaza varsta 
  * * @param {string} birthday - Data în format YYYY-MM-DD.
  * @returns {string} - String formatat pentru afișare.
  */
@@ -243,14 +148,12 @@ function getAgeString(birthday) {
     let months = today.getMonth() - birthDate.getMonth();
     let days = today.getDate() - birthDate.getDate();
 
-    // Corecție pentru zile negative
     if (days < 0) {
         months--;
         const lastMonth = new Date(today.getFullYear(), today.getMonth(), 0).getDate();
         days += lastMonth;
     }
 
-    // Corecție pentru luni negative
     if (months < 0) {
         years--;
         months += 12;
@@ -265,37 +168,28 @@ function getAgeString(birthday) {
 }
 
 
-/**
- * -----------------------------------------------------------------------------
- * --- NAVIGARE ȘI GESTIONARE SECȚIUNI (SPA) ---
- * -----------------------------------------------------------------------------
- */
+///Navigare 
 
 /**
  * Gestionează vizibilitatea secțiunilor în format Single Page Application.
  * * @param {string} sectionName - Numele secțiunii de activat.
  */
 function showSection(sectionName) {
-    // 1. Ascundem toate elementele din clasa app-section
     const allSections = document.querySelectorAll('.app-section');
     allSections.forEach(section => {
         section.style.display = 'none';
     });
-    
-    // 2. Resetăm starea meniului lateral (clasa active)
     const menuItems = document.querySelectorAll('.sidebar li');
     menuItems.forEach(li => {
         li.classList.remove('active');
     });
 
-    // 3. Activăm secțiunea cerută și butonul corespunzător
     const targetSection = document.getElementById(`section-${sectionName}`);
     const targetMenu = document.getElementById(`menu-${sectionName}`);
     
     if (targetSection) targetSection.style.display = 'block';
     if (targetMenu) targetMenu.classList.add('active');
     
-    // 4. Actualizăm titlul din Top Bar
     const titles = { 
         timeline: '🏠 Timeline Activități', 
         daily: '📝 Jurnal Zilnic',
@@ -313,8 +207,6 @@ function showSection(sectionName) {
     if (titleElement) {
         titleElement.innerText = titles[sectionName] || 'LittleSteps';
     }
-
-    // 5. Declanșăm procesele de încărcare a datelor specifice
     switch(sectionName) {
         case 'timeline': loadTimeline(); break;
         case 'daily': updateSleepUI(); break;
@@ -333,15 +225,9 @@ function showSection(sectionName) {
 }
 
 
-/**
- * -----------------------------------------------------------------------------
- * --- JURNAL ZILNIC (LOGICĂ ACȚIUNI RAPIDE) ---
- * -----------------------------------------------------------------------------
- */
+///Jurnal zilnic 
 
-/**
- * Înregistrează o masă personalizată.
- */
+///inregistrare masa 
 async function addCustomFeeding() {
     if (!selectedChildId) return alert("Vă rugăm să selectați un copil activ!");
     
@@ -369,9 +255,7 @@ async function addCustomFeeding() {
     }
 }
 
-/**
- * Gestionează pornirea și oprirea cronometrului de somn.
- */
+///cronometrul de somn
 function handleSleepTimer() {
     initializeWebNotifications();
     if (!selectedChildId) return alert("Selectați un copil înainte de a porni cronometrul.");
@@ -379,13 +263,12 @@ function handleSleepTimer() {
     const btn = document.getElementById('sleep-timer-btn');
     
     if (!sleepStartTime) {
-        // --- START SESIUNE ---
         sleepStartTime = Date.now();
         localStorage.setItem('sleepStartTime', sleepStartTime);
         updateSleepUI();
         console.log("[Sleep] Sesiune pornită la ora: " + new Date(sleepStartTime).toLocaleTimeString());
     } else {
-        // --- FINALIZARE SESIUNE ---
+        
         const endTime = Date.now();
         const differenceMs = endTime - sleepStartTime;
         const durationMinutes = Math.round(differenceMs / 1000 / 60); 
@@ -394,7 +277,6 @@ function handleSleepTimer() {
             saveSleepRecord(durationMinutes);
         }
 
-        // Resetare stare locală
         sleepStartTime = null;
         localStorage.removeItem('sleepStartTime');
         
@@ -406,7 +288,7 @@ function handleSleepTimer() {
 }
 
 /**
- * Salvează rezultatul cronometrului prin API.
+ * Salveaza cronometrul
  * * @param {number} minutes - Durata somnului în minute.
  */
 async function saveSleepRecord(minutes) {
@@ -428,9 +310,6 @@ async function saveSleepRecord(minutes) {
     }
 }
 
-/**
- * Actualizează aspectul butonului de somn dacă există o sesiune activă.
- */
 function updateSleepUI() {
     const btn = document.getElementById('sleep-timer-btn');
     if (btn && sleepStartTime) {
@@ -440,8 +319,7 @@ function updateSleepUI() {
 }
 
 /**
- * --- MONITORIZARE SCUTEC ---
- * Nouă funcționalitate cerută pentru completarea jurnalului zilnic.
+ * ///Monitorizare scutec
  * * @param {string} status - Starea (Umed, Murdar, Ambele).
  */
 async function addDiaper(status) {
@@ -473,15 +351,7 @@ async function addDiaper(status) {
 }
 
 
-/**
- * -----------------------------------------------------------------------------
- * --- DENTIȚIE (LOGICĂ VIZUALĂ) ---
- * -----------------------------------------------------------------------------
- */
-
-/**
- * Încarcă starea dinților din baza de date și randează arcadele.
- */
+///Dentitie 
 async function loadTeeth() {
     if (!selectedChildId) return;
     
@@ -494,26 +364,22 @@ async function loadTeeth() {
         return;
     }
 
-    // Creăm un obiect gol implicit - dacă serverul dă eroare, pornim cu harta goală (toți dinții gri)
     let eruptedData = {}; 
 
     try {
-        // Încercăm să luăm datele de la server
         const res = await fetch(`api/teeth.php?child_id=${selectedChildId}`);
         
         if (res.ok) {
             const textData = await res.text();
-            // Validăm dacă am primit un JSON curat înainte de a-l parsa
             if (textData && (textData.startsWith('{') || textData.startsWith('['))) {
                 eruptedData = JSON.parse(textData);
             }
         }
     } catch (e) {
-        // Dacă teeth.php e stricat sau baza de date dă eroare, prindem eroarea aici
         console.warn("[Teeth Emergency Recovery] Serverul a dat eroare, dar desenăm harta oricum:", e);
     }
 
-    // Indiferent ce s-a întâmplat mai sus, rulăm desenarea dinților!
+    // ruleaza oricum
     renderTeethArch(upperContainer, 'U', eruptedData);
     renderTeethArch(lowerContainer, 'L', eruptedData);
 }
@@ -532,11 +398,8 @@ function renderTeethArch(container, prefix, data) {
         const eruptionDate = data[toothId] || null;
         
         const toothDiv = document.createElement('div');
-        // REPARAT: Aici era eroarea, scria erosionDate în loc de eruptionDate
         toothDiv.className = `tooth ${eruptionDate ? 'erupted' : ''}`;
         toothDiv.innerHTML = i;
-        
-        // Atribuim evenimentul de click
         toothDiv.onclick = () => handleToothClick(toothId, eruptionDate);
         
         container.appendChild(toothDiv);
@@ -544,17 +407,13 @@ function renderTeethArch(container, prefix, data) {
 }
 
 
-/**
- * Gestionează interacțiunea la click pe un dinte.
- * REPARAT: Formatare robustă pentru data locală + Validare strictă a datei introduse.
- */
 async function handleToothClick(id, date) {
     if (date) {
         alert(`Acest dințișor a apărut la data de: ${date}`);
         return;
     }
     
-    // Generăm data locală corectă (An-Lună-Zi) fără decalaj de fus orar UTC
+    ///data 
     const localNow = new Date();
     const localYear = localNow.getFullYear();
     const localMonth = String(localNow.getMonth() + 1).padStart(2, '0');
@@ -564,12 +423,9 @@ async function handleToothClick(id, date) {
     const inputDate = prompt("Introduceți data apariției dințișorului (YYYY-MM-DD):", defaultLocalDate);
     
     if (inputDate) {
-        // --- PAZNICUL SUPREM PENTRU DATA DINȚIȘORULUI ---
         if (!esteDataValida(inputDate)) {
             return alert("Data introdusă este invalidă! Te rugăm să folosești formatul YYYY-MM-DD și să nu folosești o dată din viitor.");
         }
-        // ------------------------------------------------
-
         try {
             const response = await fetch('api/teeth.php', {
                 method: 'POST',
@@ -593,15 +449,8 @@ async function handleToothClick(id, date) {
         }
     }
 }
-/**
- * -----------------------------------------------------------------------------
- * --- GESTIONARE FAMILIE ȘI DATE COPII ---
- * -----------------------------------------------------------------------------
- */
 
-/**
- * Încarcă lista de membrii ai familiei și populează selectorul de copii.
- */
+
 async function loadFamilyData() {
     const listDisplay = document.getElementById('family-list-display');
     const childSelector = document.getElementById('active-child-select');
@@ -610,7 +459,7 @@ async function loadFamilyData() {
         const response = await fetch('api/family.php'); 
         const data = await response.json();
 
-        // 1. Randare Părinți (Vizual)
+        //parinti
         let htmlContent = '<h4 class="sub-header">Părinți și Tutori</h4>';
         data.parents.forEach(p => {
             const genderEmoji = (p.gender === 'F') ? '👩' : '👨';
@@ -621,16 +470,14 @@ async function loadFamilyData() {
                 </div>`;
         });
 
-        // 2. Randare Copii (Vizual) + REPARAȚIA MENIULUI
+        //copii
         htmlContent += '<h4 class="sub-header" style="margin-top:25px;">Copii Înregistrați</h4>';
         
-        // Curățăm meniul de sus înainte să băgăm opțiunile noi, ca să nu se dubleze
         if (childSelector) {
             childSelector.innerHTML = '';
         }
 
         data.children.forEach(c => {
-            // Partea vizuală pentru pagina de familie
             const genderEmoji = (c.gender === 'F') ? '👧' : '👦';
             const ageDisplay = typeof getAgeString === 'function' ? getAgeString(c.birthday) : c.birthday;
 
@@ -641,18 +488,15 @@ async function loadFamilyData() {
                     <br><small>Data nașterii: ${c.birthday}</small>
                 </div>`;
                 
-            // REPARAȚIA: Adăugăm copilul înapoi în meniul drop-down de sus!
             if (childSelector) {
                 childSelector.innerHTML += `<option value="${c.id}">${c.name}</option>`;
             }
         });
 
-        // 3. Punem pe ecran Părinții și Copiii
         if (listDisplay) {
             listDisplay.innerHTML = htmlContent;
         }
 
-        // 4. MAGIA NOUĂ: Acum că am terminat cu familia, încărcăm Cercul Social pentru copilul selectat!
         if (typeof loadFriendsList === "function") {
             loadFriendsList();
         }
@@ -662,9 +506,6 @@ async function loadFamilyData() {
     }
 }
 
-/**
- * Schimbă contextul aplicației pentru un alt copil.
- */
 function updateSelectedChild() {
     const selector = document.getElementById('active-child-select');
     if (!selector) return;
@@ -673,7 +514,6 @@ function updateSelectedChild() {
     
     console.log("[System] Copil activ schimbat la ID: " + selectedChildId);
     
-    // Reîncărcăm modulele (verificăm să existe funcțiile ca să nu dea erori)
     if (typeof loadTimeline === "function") loadTimeline();
     if (typeof loadMedicalRecords === "function") loadMedicalRecords();
     if (typeof loadGallery === "function") loadGallery();
@@ -681,15 +521,13 @@ function updateSelectedChild() {
     if (typeof loadVaccines === "function") loadVaccines();
     if (typeof loadTeeth === "function") loadTeeth();
     
-    // REPARAȚIA: Forțăm actualizarea Cercului Social!
     if (typeof loadFriendsList === "function") {
-        // Punem un text temporar de "încărcare" ca să vezi clar că reacționează
+        // text temporar de incarcare 
         const friendsDisplay = document.getElementById('friends-list-display');
         if (friendsDisplay) {
             friendsDisplay.innerHTML = '<span style="color:gray; font-style:italic;">Se actualizează cercul social... ⏳</span>';
         }
         
-        // Strigăm funcția care aduce noii prieteni
         loadFriendsList(); 
     }
 }
@@ -708,7 +546,6 @@ async function saveFamilyMember(type) {
         
         if(!payload.name) return alert("Numele copilului este obligatoriu!");
 
-        // --- PAZNICUL PENTRU DATA DE NAȘTERE A COPILULUI ---
         if (!esteDataValida(payload.birthday)) {
             return alert("Data de naștere este invalidă! Asigură-te că ai completat-o corect și că nu este din viitor.");
         }
@@ -721,7 +558,6 @@ async function saveFamilyMember(type) {
         
         if(!payload.email) return alert("Email-ul este obligatoriu!");
 
-        // --- PAZNICUL PENTRU EMAILUL PĂRINTELUI (Opțional, dar super util!) ---
         if (!esteEmailValid(payload.email)) {
             return alert("Te rugăm să introduci o adresă de email validă pentru noul membru!");
         }
@@ -742,21 +578,13 @@ async function saveFamilyMember(type) {
         console.error("[Family Save] Eroare:", e);
     }
 }
-/**
- * -----------------------------------------------------------------------------
- * --- SISTEM DE AUTENTIFICARE ȘI ACCES ---
- * -----------------------------------------------------------------------------
- */
 
-/**
- * Pregătește interfața pentru modul de înregistrare cont nou.
- */
+///autentificare
 function showRegisterFields() {
     const termsContainer = document.getElementById('register-terms-container');
     const fullNameInput = document.getElementById('auth-fullname');
     const authTitle = document.getElementById('auth-title');
     
-    // Preluăm butoanele din HTML pentru a le schimba dinamic acțiunea
     const loginBtn = document.getElementById('btn-login-action') || document.querySelector("button[onclick*='login']");
     const toggleBtn = document.getElementById('btn-toggle-mode') || document.querySelector("button[onclick*='showRegisterFields']");
     const registerBtn = document.getElementById('btn-register-action');
@@ -765,16 +593,12 @@ function showRegisterFields() {
         termsContainer.style.display = 'block';
         fullNameInput.style.display = 'block';
         
-        // --- LOGICĂ NOUĂ DE INTERFAȚĂ PENTRU BUTOANE ---
         if (registerBtn) {
-            // Dacă ai adăugat deja butonul dedicat în HTML, îl afișăm pe acela și le ascundem pe celelalte
             registerBtn.style.display = 'block';
             if (loginBtn) loginBtn.style.display = 'none';
             if (toggleBtn) toggleBtn.style.display = 'none';
         } else if (loginBtn) {
-            // DUPĂ PLANUL B: Dacă nu ai butonul nou în HTML, îl transformăm direct pe cel de Conectare
             loginBtn.innerText = "Creează Cont 🚀";
-            // Îi schimbăm evenimentul de click direct din JS să execute register în loc de login
             loginBtn.setAttribute("onclick", "handleAuth('register')");
             if (toggleBtn) toggleBtn.style.display = 'none';
         }
@@ -786,11 +610,6 @@ function showRegisterFields() {
         console.log("[Auth UI] Formularul a fost configurat pentru modul de Înregistrare.");
     }
 }
-
-/**
- * Procesează cererile de Login sau Register.
- * MODIFICAT: Separă logica butonului și validează corect bifa GDPR doar la register.
- */
 async function handleAuth(action) {
     const email = document.getElementById('auth-email').value;
     const password = document.getElementById('auth-password').value;
@@ -798,17 +617,14 @@ async function handleAuth(action) {
     const fullName = fullNameField ? fullNameField.value : "";
     const termsCheckbox = document.getElementById('auth-terms');
 
-    // Validare primară elemente obligatorii
     if (!email || !password) {
         return alert("Vă rugăm să introduceți atât emailul cât și parola.");
     }
 
-    // --- PROTECȚIA NOUĂ: VALIDAREA STRUCTURII EMAILULUI ---
     if (!esteEmailValid(email)) {
         return alert("Te rugăm să introduci o adresă de email validă (ex: nume@domeniu.com)!");
     }
 
-    // --- PROTECȚIE ȘI VALIDARE STRICTĂ GDPR LA ÎNREGISTRARE ---
     if (action === 'register') {
         if (!termsCheckbox || !termsCheckbox.checked) {
             return alert("Trebuie să fii de acord cu termenii și condițiile (bifează căsuța GDPR) pentru a crea contul.");
@@ -829,7 +645,6 @@ async function handleAuth(action) {
                 finalizeLogin(result.user);
             } else {
                 alert("Contul a fost creat! Vă rugăm să vă conectați utilizând noile date.");
-                // Resetăm interfața înapoi la login curat pentru utilizator ca să se poată conecta
                 location.reload();
             }
         } else {
@@ -840,9 +655,26 @@ async function handleAuth(action) {
     }
 }
 
-/**
- * Finalizează procesul de login și deschide dashboard-ul.
- */
+///deschide dashboard
+function finalizeLogin(user) {
+    const overlay = document.getElementById('auth-overlay');
+    if (overlay) overlay.style.display = 'none';
+    
+    const displayUser = document.getElementById('display-user');
+    if (displayUser) {
+        displayUser.innerText = user.fullname || user.email;
+    }
+        const adminTab = document.getElementById('menu-admin');
+    if (adminTab) {
+        adminTab.style.display = (user.role === 'admin' || user.role === 'family_admin') ? 'block' : 'none';
+    }
+
+    console.log(`[Auth] Bine ai venit, ${user.email}!`);
+    
+    loadFamilyData();
+    loadTimeline();
+}
+
 function finalizeLogin(user) {
     const overlay = document.getElementById('auth-overlay');
     if (overlay) overlay.style.display = 'none';
@@ -863,34 +695,6 @@ function finalizeLogin(user) {
     loadFamilyData();
     loadTimeline();
 }
-
-/**
- * Finalizează procesul de login și deschide dashboard-ul.
- * (Duplicat corectat pentru a preveni erorile de suprascriere în JS)
- */
-function finalizeLogin(user) {
-    const overlay = document.getElementById('auth-overlay');
-    if (overlay) overlay.style.display = 'none';
-    
-    const displayUser = document.getElementById('display-user');
-    if (displayUser) {
-        displayUser.innerText = user.fullname || user.email;
-    }
-    
-    // REPARAT: Afișăm panoul de admin atât pentru administratorul global, cât și pentru administratorul de familie
-    const adminTab = document.getElementById('menu-admin');
-    if (adminTab) {
-        adminTab.style.display = (user.role === 'admin' || user.role === 'family_admin') ? 'block' : 'none';
-    }
-
-    console.log(`[Auth] Bine ai venit, ${user.email}!`);
-    
-    loadFamilyData();
-    loadTimeline();
-}
-/**
- * Verifică starea sesiunii la pornirea aplicației.
- */
 async function checkLoginStatus() {
     try {
         const res = await fetch('api/auth.php?action=status');
@@ -903,13 +707,9 @@ async function checkLoginStatus() {
         console.warn("[System] Utilizator neautentificat.");
     }
     
-    // Inițializare GDPR
     checkCookieConsent();
 }
 
-/**
- * Deconectează utilizatorul curent.
- */
 function logout() {
     fetch('api/auth.php?action=logout').then(() => {
         console.log("[Auth] Sesiune închisă.");
@@ -917,8 +717,7 @@ function logout() {
     });
 }
 
-// --- FUNCȚIE UTILITARĂ PENTRU SECURIZARE (XSS PROTECTION) ---
-// Această funcție curăță caracterele speciale din baza de date pentru a preveni erorile de randare
+///curatare caractere
 function escapeHTML(str) {
     if (!str) return '';
     return String(str)
@@ -928,108 +727,19 @@ function escapeHTML(str) {
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
 }
-/**
- * -----------------------------------------------------------------------------
- * --- TIMELINE INTELIGENT CU FILTRARE CALENDARISTICĂ ---
- * -----------------------------------------------------------------------------
- * Această funcție este „motorul” aplicației. Colectează date din toate 
- * sursele API și le organizează cronologic.
- * Nou: Permite filtrarea în funcție de o dată selectată din calendar.
- */
 async function loadTimeline() {
     if (!selectedChildId) return;
-    
     const timelineList = document.getElementById('activity-list');
-    const dateFilter = document.getElementById('timeline-date-filter').value; // Preluăm data din calendar
-    
-    timelineList.innerHTML = '<p class="placeholder-text">Se procesează fluxul de date pentru data selectată...</p>';
-
-    // Funcție interna de protecție pentru fetch (Bulletproof JSON)
-    const safeFetch = async (url) => {
-        try {
-            const r = await fetch(url);
-            if (!r.ok) return []; 
-            return await r.json();
-        } catch (e) {
-            console.warn(`[Timeline Warning] Nu s-au putut prelua datele: ${url}`);
-            return []; 
-        }
-    };
+    const dateFilterElement = document.getElementById('timeline-date-filter');
+    const dateFilter = dateFilterElement ? dateFilterElement.value : '';
+    timelineList.innerHTML = '<p class="placeholder-text">Se procesează fluxul de date de pe server... ⏳</p>';
 
     try {
-        // MODIFICAT: Colectăm în paralel din 8 surse acum (am adăugat capetele de tabel pentru vaccines și teeth)
-        const [feeding, sleep, medical, media, evolution, diaper, vaccines, teeth] = await Promise.all([
-            safeFetch(`api/feeding.php?child_id=${selectedChildId}`),
-            safeFetch(`api/sleep.php?child_id=${selectedChildId}`),
-            safeFetch(`api/medical.php?child_id=${selectedChildId}`),
-            safeFetch(`api/media.php?child_id=${selectedChildId}`),
-            safeFetch(`api/evolution.php?child_id=${selectedChildId}`),
-            safeFetch(`api/diaper.php?child_id=${selectedChildId}`),
-            safeFetch(`api/vaccines.php?child_id=${selectedChildId}`),
-            safeFetch(`api/teeth.php?child_id=${selectedChildId}`)
-        ]);
-        checkFeedingAlerts(feeding);
+        const response = await fetch(`api/timeline.php?child_id=${selectedChildId}&date=${dateFilter}`);
+        if (!response.ok) throw new Error("Eroare răspuns server");
+        
+        const filteredEvents = await response.json();
 
-        const feedingData = feeding;
-        const sleepData = sleep;
-        const medicalData = medical;
-        const mediaData = media;
-        const evolutionData = evolution;
-        const diaperData = diaper;
-
-        // NOU: Procesăm maparea structurală pentru obiectul de dinți { "U-1": "2026-05-15" } primit de la API
-        let teethEvents = [];
-        if (teeth && typeof teeth === 'object' && !Array.isArray(teeth)) {
-            Object.keys(teeth).forEach(toothId => {
-                const parts = toothId.split('-');
-                const pozitie = (toothId.includes('U') ? 'Sus-' : 'Jos-') + (parts[1] || toothId);
-                teethEvents.push({
-                    icon: '🦷',
-                    title: 'Dinte Nou Erupt!',
-                    details: `A apărut dințișorul de lapte: ${pozitie}`,
-                    date: teeth[toothId],
-                    isDateOnly: true
-                });
-            });
-        }
-
-        // NOU: Filtrăm doar vaccinurile care au fost marcate ca administrate (status == 1)
-        let administeredVaccines = (vaccines || []).filter(v => v.status == 1 || v.status == '1');
-
-        // Combinăm totul într-un tablou brut (Data Flatting)
-        let rawEvents = [
-            ...feedingData.map(f => ({ ...f, icon: '🍼', title: `Hrană: ${f.type}`, date: f.created_at })),
-            ...sleepData.map(s => ({ ...s, icon: '😴', title: 'Somn', date: s.created_at })),
-            ...medicalData.map(m => ({ ...m, icon: '🏥', title: `Medical: ${m.diagnosis}`, date: m.event_date, isDateOnly: true })),
-            ...mediaData.map(i => ({ ...i, icon: '🖼️', title: 'Imagine', date: i.created_at, isMedia: true })),
-            ...diaperData.map(d => ({ ...d, icon: '🧷', title: `Scutec: ${d.type}`, date: d.created_at })),
-            ...(evolutionData.growth || []).map(g => ({ icon: '📏', title: 'Creștere', details: `⚖️ ${g.weight}kg | 📏 ${g.height}cm`, date: g.recorded_date, isDateOnly: true })),
-            ...(evolutionData.milestones || []).map(m => ({ icon: '🏆', title: `Reper: ${m.milestone_name}`, details: 'Bifat!', date: m.milestone_date, isDateOnly: true })),
-            // NOU: Adăugate în rawEvents fără a altera restul mapărilor din array
-            ...administeredVaccines.map(v => ({ icon: '💉', title: `Vaccinare: ${v.name}`, details: `Doza recomandată la: ${v.age_tag}`, date: v.date_administered, isDateOnly: true })),
-            ...teethEvents
-        ];
-
-        // --- LOGICĂ FILTRARE CALENDAR ---
-        let filteredEvents = rawEvents;
-        if (dateFilter) {
-            filteredEvents = rawEvents.filter(event => {
-                if (!event.date) return false;
-                // Extragem doar partea de YYYY-MM-DD din data evenimentului
-                const eventDate = event.date.split(' ')[0]; 
-                return eventDate === dateFilter;
-            });
-        }
-
-        // --- SORTARE CRONOLOGICĂ (Cel mai nou la început) ---
-        filteredEvents.sort((a, b) => {
-            const timeA = new Date(a.date).getTime();
-            const timeB = new Date(b.date).getTime();
-            if (timeB !== timeA) return timeB - timeA;
-            return (b.id || 0) - (a.id || 0);
-        });
-
-        // Verificăm dacă avem rezultate după filtrare
         if (filteredEvents.length === 0) {
             const msg = dateFilter 
                 ? `Nicio activitate înregistrată pentru data de ${dateFilter}.` 
@@ -1037,17 +747,12 @@ async function loadTimeline() {
             timelineList.innerHTML = `<p class="info-text" style="text-align:center; padding: 40px;">📭 ${msg}</p>`;
             return;
         }
-
-        // --- RENDERIZARE FINALĂ ---
         timelineList.innerHTML = filteredEvents.map(item => {
             const dateObj = new Date(item.date);
-            const displayTime = item.isDateOnly 
-                ? dateObj.toLocaleDateString('ro-RO', { day: 'numeric', month: 'long', year: 'numeric' })
-                : dateObj.toLocaleString('ro-RO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
+            const displayTime = dateObj.toLocaleString('ro-RO', { day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit' });
 
-            // AICI FOLOSIM FUNCȚIA NOUĂ PENTRU A CURĂȚA DATELE
             const safeTitle = escapeHTML(item.title);
-            const safeDetails = escapeHTML(item.details || item.treatment || item.caption || '');
+            const safeDetails = escapeHTML(item.details);
 
             return `
                 <div class="item timeline-card" style="animation: fadeIn 0.4s ease forwards;">
@@ -1058,23 +763,18 @@ async function loadTimeline() {
                             <span class="timestamp-label" style="font-size: 0.75rem; background: var(--bg); padding: 2px 8px; border-radius: 10px;">📅 ${displayTime}</span>
                         </div>
                         <p class="details-text" style="margin-top: 5px; color: var(--text-light);">${safeDetails}</p>
-                        ${item.isMedia && item.file_path ? `<img src="${escapeHTML(item.file_path)}" class="timeline-img" style="border-radius: 12px; margin-top: 10px; max-height: 250px; width: auto; max-width: 100%;">` : ''}
                     </div>
                 </div>
             `;
         }).join('');
 
-        console.log(`[Timeline] S-au randat ${filteredEvents.length} evenimente.`);
+        console.log(`[Timeline] S-au randat ${filteredEvents.length} evenimente procesate de server.`);
 
     } catch (error) {
         console.error("[Critical Error] Timeline Crash:", error);
         timelineList.innerHTML = '<p class="error-text">Sistemul de jurnalizare întâmpină dificultăți tehnice.</p>';
     }
 }
-
-/**
- * Resetează filtrul de dată și reîncarcă întreg timeline-ul.
- */
 function resetTimelineFilter() {
     const filterInput = document.getElementById('timeline-date-filter');
     if (filterInput) {
@@ -1083,15 +783,7 @@ function resetTimelineFilter() {
         console.log("[Timeline Filter] Filtrul a fost resetat la 'Toate'.");
     }
 }
-/**
- * -----------------------------------------------------------------------------
- * --- ISTORIC MEDICAL ---
- * -----------------------------------------------------------------------------
- */
-
-/**
- * Salvează o vizită medicală nouă.
- */
+///istoric medical
 async function addMedicalRecord() {
     const data = {
         child_id: selectedChildId,
@@ -1101,16 +793,12 @@ async function addMedicalRecord() {
         doctor: document.getElementById('med-doctor').value
     };
 
-    // --- PAZNICUL PENTRU DATĂ ---
     if (!esteDataValida(data.date)) {
         return alert("Data vizitei medicale este invalidă! Asigură-te că ai completat-o corect și că nu este din viitor.");
     }
-    
-    // --- PAZNICUL PENTRU DIAGNOSTIC ---
     if (!data.diagnosis) {
         return alert("Vă rugăm să introduceți diagnosticul sau motivul vizitei.");
     }
-
     try {
         const response = await fetch('api/medical.php', {
             method: 'POST',
@@ -1129,10 +817,6 @@ async function addMedicalRecord() {
         console.error("[Medical Error] Eșec salvare:", e);
     }
 }
-
-/**
- * Încarcă lista vizitelor medicale pentru afișare separată.
- */
 async function loadMedicalRecords() {
     if (!selectedChildId) return;
     
@@ -1158,17 +842,6 @@ async function loadMedicalRecords() {
         console.error("[Medical] Eroare fetch:", err);
     }
 }
-
-
-/**
- * -----------------------------------------------------------------------------
- * --- SISTEM VACCINARE ---
- * -----------------------------------------------------------------------------
- */
-
-/**
- * Încarcă schema de vaccinare și starea fiecărei doze.
- */
 async function loadVaccines() {
     if (!selectedChildId) return;
     
@@ -1224,16 +897,7 @@ async function toggleVaccineState(vaccineId, newStatus) {
     }
 }
 
-
-/**
- * -----------------------------------------------------------------------------
- * --- GALERIE ȘI GESTIONARE MEDIA ---
- * -----------------------------------------------------------------------------
- */
-
-/**
- * Procesează încărcarea unui fișier media.
- */
+///galerie
 async function uploadMedia() {
     const fileSelector = document.getElementById('media-file');
     const captionText = document.getElementById('media-caption').value;
@@ -1270,9 +934,6 @@ async function uploadMedia() {
     }
 }
 
-/**
- * Încarcă toate amintirile salvate pentru copilul activ.
- */
 async function loadGallery() {
     if (!selectedChildId) return;
     
@@ -1305,15 +966,7 @@ async function loadGallery() {
 }
 
 
-/**
- * -----------------------------------------------------------------------------
- * --- EVOLUȚIE ȘI ANALIZĂ GRAFICĂ (CHART.JS) ---
- * -----------------------------------------------------------------------------
- */
-
-/**
- * Prelucrează datele de creștere și le randează vizual.
- */
+///evolutie si grafic 
 async function loadEvolutionData() {
     if (!selectedChildId) return;
     
@@ -1324,21 +977,18 @@ async function loadEvolutionData() {
         const res = await fetch(`api/evolution.php?child_id=${selectedChildId}`);
         const data = await res.json();
 
-        // 1. Populare listă măsurători
         weightList.innerHTML = data.growth.map(g => 
             `<div class="item growth-entry">
                 ⚖️ <strong>${g.weight}kg</strong> | 📏 <strong>${g.height}cm</strong>
                 <br><small>Data măsurării: ${g.recorded_date}</small>
             </div>`).join('') || '<p>Nicio măsurătoare salvată.</p>';
 
-        // 2. Populare listă repere
         milestoneList.innerHTML = data.milestones.map(m => 
             `<div class="item milestone-entry">
                 🏆 <strong>${m.milestone_name}</strong>
                 <br><small>Data: ${m.milestone_date}</small>
             </div>`).join('') || '<p>Niciun reper marcat.</p>';
 
-        // 3. Generare sau actualizare grafic
         if (data.growth.length > 0) {
             renderEvolutionChart(data.growth);
         }
@@ -1354,7 +1004,6 @@ async function loadEvolutionData() {
  * * @param {Array} rawData - Array de obiecte de măsurare.
  */
 function renderEvolutionChart(rawData) {
-    // Sortăm datele cronologic pentru un grafic corect (de la vechi la nou)
     const sorted = [...rawData].sort((a, b) => new Date(a.recorded_date) - new Date(b.recorded_date));
     
     const labels = sorted.map(d => d.recorded_date);
@@ -1366,12 +1015,10 @@ function renderEvolutionChart(rawData) {
     
     const context = canvas.getContext('2d');
     
-    // Distrugem graficul anterior dacă există (esențial pentru a preveni ghosting-ul datelor)
     if (growthChart) {
         growthChart.destroy();
     }
     
-    // Crearea instanței noi de grafic
     growthChart = new Chart(context, {
         type: 'line',
         data: {
@@ -1400,10 +1047,9 @@ function renderEvolutionChart(rawData) {
             ]
         },
         options: {
-            // FIX PENTRU RESIZING INFINIT:
             responsive: true,
-            maintainAspectRatio: false, // Forțează graficul să stea în containerul lui CSS
-            resizeDelay: 200, // Amână redesenarea pentru a stabiliza dimensiunile
+            maintainAspectRatio: false, 
+            resizeDelay: 200, 
             
             layout: {
                 padding: {
@@ -1453,9 +1099,6 @@ function renderEvolutionChart(rawData) {
     console.log("[Chart System] Graficul de creștere a fost stabilizat și randat.");
 }
 
-/**
- * Salvează date noi de evoluție (Greutate/Înălțime sau Reper).
- */
 async function saveEvolution(category) {
     if (!selectedChildId) return alert("Selectați un copil!");
     
@@ -1466,7 +1109,6 @@ async function saveEvolution(category) {
         requestData.weight = document.getElementById('growth-weight').value;
         requestData.height = document.getElementById('growth-height').value;
         
-        // --- PAZNICUL PENTRU CREȘTERE ---
         if (!esteDataValida(requestData.date)) {
             return alert("Data măsurătorii este invalidă! Asigură-te că ai completat-o corect și că nu este din viitor.");
         }
@@ -1475,7 +1117,6 @@ async function saveEvolution(category) {
         requestData.date = document.getElementById('milestone-date').value;
         requestData.name = document.getElementById('milestone-name').value;
         
-        // --- PAZNICUL PENTRU REPERE (MILESTONES) ---
         if (!esteDataValida(requestData.date)) {
             return alert("Data reperului este invalidă! Asigură-te că nu este din viitor.");
         }
@@ -1500,21 +1141,14 @@ async function saveEvolution(category) {
         console.error("[Evolution Save Error]:", err);
     }
 }
-/**
- * -----------------------------------------------------------------------------
- * --- PANOU ADMINISTRARE ȘI GESTIONARE UTILIZATORI ---
- * -----------------------------------------------------------------------------
- */
 
-/**
- * Prelucrează lista utilizatorilor (doar pentru utilizatori cu rol Admin).
- */
+///Panou admin
+
 async function loadAdminData() {
     const userTableBody = document.getElementById('admin-user-list');
     const childTableBody = document.getElementById('admin-children-list');
     const friendTableBody = document.getElementById('admin-friends-list'); // <-- Adăugat pentru Cercul Social
     
-    // 1. ÎNCĂRCĂM ADULȚII (Părinții)
     try {
         const responseUsers = await fetch('api/admin.php');
         if (responseUsers.ok) {
@@ -1537,7 +1171,7 @@ async function loadAdminData() {
         console.error("[Admin Panel] Eroare la preluarea adulților:", e);
     }
 
-    // 2. ÎNCĂRCĂM COPIII
+
     try {
         const responseChildren = await fetch('api/admin.php?type=children');
         if (responseChildren.ok) {
@@ -1548,6 +1182,9 @@ async function loadAdminData() {
                     <td><strong>${c.name}</strong></td>
                     <td>${c.birthday || '-'}</td>
                     <td>
+                        <button onclick="editChildName(${c.id}, '${c.name}')" class="badge admin" style="cursor: pointer; border: none; margin-right: 8px;">
+                            ✏️ Modifică Nume
+                        </button>
                         <button onclick="executeChildDeletion(${c.id})" style="background: var(--danger, #ff4757); color: white; padding: 6px 12px; border: none; border-radius: 6px; cursor: pointer;">
                             Șterge Copil
                         </button>
@@ -1559,7 +1196,6 @@ async function loadAdminData() {
         console.error("[Admin Panel] Eroare la preluarea copiilor:", e);
     }
 
-    // 3. ÎNCĂRCĂM CERCUL SOCIAL PENTRU ADMINISTRARE
     try {
         const responseFriends = await fetch('api/friends.php');
         if (responseFriends.ok) {
@@ -1584,14 +1220,11 @@ async function loadAdminData() {
         console.error("[Admin Panel] Eroare preluare cerc social:", e);
     }
 
-    // Dacă ai și logurile de securitate, le lăsăm să se încarce
     if (typeof loadSecurityLogs === "function") {
         loadSecurityLogs();
     }
 }
-/**
- * Lansează procedura de ștergere a unui cont.
- */
+///stergere cont 
 async function executeUserDeletion(id) {
     if (confirm("ATENȚIE: Ștergerea unui utilizator este ireversibilă. Confirmați operațiunea?")) {
         try {
@@ -1610,11 +1243,7 @@ async function executeUserDeletion(id) {
 }
 
 
-/**
- * -----------------------------------------------------------------------------
- * --- EXPORT ȘI INTEGRARE DATE ---
- * -----------------------------------------------------------------------------
- */
+///export date 
 
 /**
  * Redirecționează către scriptul de export pentru descărcarea datelor.
@@ -1626,25 +1255,15 @@ function exportData(format) {
   console.log(`[Export] Se generează fișierul în format: ${format.toUpperCase()}`);
   window.location.href = exportUrl;
 }
-/**
- * -----------------------------------------------------------------------------
- * --- MODUL COMPLEMENTAR: GESTIUNE RELAȚIONARE COPII (CERC SOCIAL) ---
- * -----------------------------------------------------------------------------
- */
 
-/**
- * Salvează o relație nouă cu un alt copil în localStorage
- */
+///cerc social 
+
 async function saveFriendRelation() {
-    // 1. Citim ce ai selectat în dropdown-ul din HTML
     const destinationSelect = document.getElementById('friend-child-destinatar').value;
     const activeChildSelect = document.getElementById('active-child-select');
     const selectedChildId = activeChildSelect ? activeChildSelect.value : null;
 
-    // 2. Setăm valoarea implicită 0 (care înseamnă comun / ambii copii - galben)
     let finalChildIdToSave = 0; 
-
-    // Dacă ai selectat specific "Copilul activ", atunci folosim ID-ul acelui copil
     if (destinationSelect === 'active') {
         if (!selectedChildId) {
             return alert("⚠️ Te rugăm să selectezi un copil din meniul de sus!");
@@ -1652,7 +1271,6 @@ async function saveFriendRelation() {
         finalChildIdToSave = selectedChildId; 
     }
 
-    // 3. Pachetul trimis către PHP
     const payload = {
         name: document.getElementById('friend-name').value,
         relation: document.getElementById('friend-relation').value,
@@ -1674,11 +1292,9 @@ async function saveFriendRelation() {
         if (response.ok) {
             alert("Relație înregistrată cu succes!");
             
-            // Golim inputurile
             document.getElementById('friend-name').value = '';
             document.getElementById('friend-details').value = '';
             
-            // Rendrează lista din nou
             if (typeof loadFriendsList === "function") {
                 loadFriendsList(); 
             }
@@ -1690,13 +1306,7 @@ async function saveFriendRelation() {
         console.error("[Friends Save] Eroare:", e);
     }
 }
-/**
- * Încarcă și afișează cercul social în funcție de copilul selectat
- */
-/**
- * Încarcă și afișează cercul social în funcție de copilul selectat
- * MODIFICAT: Se lipește direct în containerul principal existent pentru a evita erorile de DOM!
- */
+
 function loadFriendsData() {
     const targetZone = document.getElementById('zona-prieteni-sigura');
     if (!targetZone) return; 
@@ -1708,8 +1318,6 @@ function loadFriendsData() {
 
     let friends = JSON.parse(localStorage.getItem('littleStepsFriends')) || [];
     
-    // --- FILTRARE INTELIGENTĂ REPARATĂ ---
-    // Îi arătăm doar dacă aparțin fix de acest ID de copil SAU dacă sunt marcați pentru toți copiii ("ALL_CHILDREN")
     let currentChildFriends = friends.filter(f => 
         String(f.childId) === String(currentChildId) || 
         f.childId === "ALL_CHILDREN" ||
@@ -1737,16 +1345,7 @@ function loadFriendsData() {
 
     targetZone.innerHTML = htmlContent;
 }
-/**
- * -----------------------------------------------------------------------------
- * --- MODUL COMPLEMENTAR: JURNAL DE AUDIT ȘI SECURITATE (COUPLE LOGGING) ---
- * -----------------------------------------------------------------------------
- */
-
-/**
- * Înregistrează o acțiune nouă în logul de securitate
- * REPARAT: Legat de selectedChildId pentru a separa logurile între familii distincte
- */
+///Audit si securitate
 function addSecurityLog(actionDetails) {
     if (!selectedChildId) return; // Nu logăm dacă nu există un context activ
 
@@ -1756,11 +1355,9 @@ function addSecurityLog(actionDetails) {
     const now = new Date();
     const timestamp = now.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 
-    // Creăm o cheie unică în localStorage specifică DOAR pentru acest copil/familie active
     const storageKey = `littleStepsLogs_child_${selectedChildId}`;
     let logs = JSON.parse(localStorage.getItem(storageKey)) || [];
 
-    // Adăugăm noul log în capul listei
     logs.unshift({
         time: timestamp,
         user: currentUser,
@@ -1772,10 +1369,7 @@ function addSecurityLog(actionDetails) {
     localStorage.setItem(storageKey, JSON.stringify(logs));
 }
 
-/**
- * Afișează logurile salvate în panoul de administrare
- * REPARAT: Încarcă doar logurile asociate contextului familiei active
- */
+
 function loadSecurityLogs() {
     const display = document.getElementById('security-log-display');
     if (!display) return;
@@ -1784,12 +1378,9 @@ function loadSecurityLogs() {
         display.innerHTML = '<p style="font-style: italic; color: #bdc3c7; margin: 0;">Selectați un copil activ pentru a vedea jurnalul de audit.</p>';
         return;
     }
-
-    // Citim strict cheia copilului activ curent
     const storageKey = `littleStepsLogs_child_${selectedChildId}`;
     let logs = JSON.parse(localStorage.getItem(storageKey));
 
-    // Dacă este o familie nouă/copil nou și nu are loguri, inițializăm loguri curate DOAR pentru ei
     if (!logs || logs.length === 0) {
         const userDisplay = document.getElementById('display-user');
         const currentUser = userDisplay ? userDisplay.innerText : "utilizator";
@@ -1825,9 +1416,6 @@ function loadSecurityLogs() {
     display.innerHTML = html;
 }
 
-/**
- * Șterge istoricul logurilor doar pentru copilul/familia curentă
- */
 function clearSecurityLogs() {
     if (confirm("Sigur doriți să ștergeți jurnalul de audit pentru această sesiune?")) {
         if (selectedChildId) {
@@ -1836,15 +1424,8 @@ function clearSecurityLogs() {
         }
     }
 }
-/**
- * -----------------------------------------------------------------------------
- * --- MODUL NOU: SISTEM DE NOTIFICĂRI WEB (BROWSER PUSH NOTIFICATIONS) ---
- * -----------------------------------------------------------------------------
- */
 
-/**
- * Cere permisiunea utilizatorului pentru a trimite notificări pe desktop
- */
+
 function initializeWebNotifications() {
     if (!("Notification" in window)) return;
 
@@ -1868,7 +1449,6 @@ function initializeWebNotifications() {
 function checkFeedingAlerts(feedingRecords) {
     if (!feedingRecords || feedingRecords.length === 0 || Notification.permission !== "granted") return;
 
-    // Luăm cea mai recentă masă (prima din listă)
     const lastFeeding = feedingRecords[0];
     
     // Extragerea datei și orei (presupunând că ai un câmp numit 'created_at' sau 'date' + 'time')
@@ -1892,39 +1472,29 @@ function checkFeedingAlerts(feedingRecords) {
         }
     }
 }
-/**
- * -----------------------------------------------------------------------------
- * --- SECVENȚĂ DE BOOTSTRAP (INITIALIZARE) ---
- * -----------------------------------------------------------------------------
- */
+///bootstrap
 
-// Punctul de intrare al aplicației
 document.addEventListener('DOMContentLoaded', () => {
     console.log("[System] Aplicația LittleSteps a fost încărcată.");
     initializeWebNotifications();
     checkLoginStatus();
 });
 async function deleteUser(userId) {
-    // 1. Paznicul de siguranță (întreabă utilizatorul de două ori)
     const isConfirmed = confirm("⚠️ Ești sigur că vrei să ștergi acest membru? Acțiunea este ireversibilă și îi va șterge toate datele!");
     
     if (!isConfirmed) {
-        return; // Dacă apasă Cancel, ne oprim aici.
+        return; 
     }
 
-    // 2. Trimitem comanda către Bucătar (PHP)
     try {
-        // Folosim metoda 'DELETE' - o metodă specială HTTP pentru ștergeri
         const response = await fetch(`api/admin.php?id=${userId}`, {
             method: 'DELETE'
         });
 
         const result = await response.json();
 
-        // 3. Verificăm răspunsul
         if (response.ok) {
             alert("Membru șters cu succes!");
-            // Reîncărcăm tabelul din panoul de admin ca să dispară vizual rândul
             loadAdminUsers(); 
         } else {
             alert("Eroare la ștergere: " + (result.error || "Problemă necunoscută."));
@@ -1940,18 +1510,14 @@ async function saveFriendRelation() {
     const activeChildSelect = document.getElementById('active-child-select');
     const selectedChildId = activeChildSelect ? activeChildSelect.value : null;
 
-    // Implicit setăm 0 (ceea ce înseamnă "Comun pentru ambii copii" și va genera chenarul galben/portocaliu)
     let finalChildIdToSave = 0; 
 
-    // Dacă utilizatorul a ales specific "Copilul selectat activ", actualizăm cu ID-ul copilului de sus
     if (destinationSelect === 'active') {
         if (!selectedChildId) {
             return alert("⚠️ Te rugăm să selectezi un copil din meniul de sus înainte de a înregistra relația!");
         }
         finalChildIdToSave = selectedChildId; 
     }
-
-    // 2. Construim pachetul de date (payload-ul)
     const payload = {
         name: document.getElementById('friend-name').value,
         relation: document.getElementById('friend-relation').value,
@@ -1959,12 +1525,10 @@ async function saveFriendRelation() {
         child_id: finalChildIdToSave // Trimite 0 pentru ambii, sau ID-ul real pentru un singur copil
     };
 
-    // 3. Validare simplă pentru a ne asigura că numele nu e gol
     if (!payload.name || payload.name.trim() === "") {
         return alert("Te rugăm să introduci numele persoanei sau al copilului!");
     }
 
-    // 4. Trimitem datele către Bucătar (API-ul PHP)
     try {
         const response = await fetch('api/friends.php', {
             method: 'POST',
@@ -1975,11 +1539,9 @@ async function saveFriendRelation() {
         if (response.ok) {
             alert("Relație înregistrată cu succes!");
             
-            // Golim câmpurile formularului după succes
             document.getElementById('friend-name').value = '';
             document.getElementById('friend-details').value = '';
             
-            // Reîncărcăm instant interfața cu cercul social ca să apară noul element
             if (typeof loadFriendsList === "function") {
                 loadFriendsList(); 
             }
@@ -1996,7 +1558,7 @@ async function loadFriendsList() {
     const friendsDisplay = document.getElementById('friends-list-display');
     const activeChildSelect = document.getElementById('active-child-select');
     
-    // Dacă nu avem unde să afișăm sau nu s-a încărcat meniul, ne oprim
+
     if (!friendsDisplay || !activeChildSelect) return;
 
     const selectedChildId = activeChildSelect.value;
@@ -2012,7 +1574,6 @@ async function loadFriendsList() {
         if (response.ok) {
             const friends = await response.json();
             
-            // Desenăm titlul indiferent dacă are sau nu prieteni
             let html = '<h4 class="sub-header" style="margin-top:25px; color: #16a085;">👦 Cerc Social & Colegi</h4>';
 
             if (friends.length === 0) {
@@ -2020,7 +1581,6 @@ async function loadFriendsList() {
             } else {
                 html += '<ul style="list-style: none; padding: 0;">';
                 friends.forEach(f => {
-                    // Setăm culoarea chenarului în funcție de child_id (0 înseamnă comun/galben)
                     const badgeColor = (f.child_id == 0 || f.child_id === "0") ? '#f39c12' : '#1abc9c'; 
                     
                     html += `
@@ -2042,7 +1602,6 @@ async function loadFriendsList() {
         console.error("[Cerc Social] Eroare la preluare date:", e);
     }
 }
-// --- FUNCȚIA PENTRU ȘTERGEREA UNUI COPIL ---
 async function executeChildDeletion(childId) {
     const isConfirmed = confirm("⚠️ Ești sigur că vrei să ștergi acest copil? Acțiunea este ireversibilă și îi va șterge istoricul!");
     
@@ -2055,7 +1614,6 @@ async function executeChildDeletion(childId) {
 
         if (response.ok) {
             alert("Copil șters cu succes!");
-            // Reîmprospătăm instant tabelele din Admin
             if (typeof loadAdminData === "function") loadAdminData(); 
         } else {
             alert("Eroare la ștergerea copilului.");
@@ -2065,7 +1623,6 @@ async function executeChildDeletion(childId) {
     }
 }
 
-// --- FUNCȚIA PENTRU ȘTERGEREA DIN CERCUL SOCIAL ---
 async function executeFriendDeletion(friendId) {
     const isConfirmed = confirm("⚠️ Ești sigur că vrei să ștergi această persoană din Cercul Social?");
     
@@ -2078,7 +1635,6 @@ async function executeFriendDeletion(friendId) {
 
         if (response.ok) {
             alert("Persoană ștearsă din cercul social!");
-            // Reîmprospătăm instant tabelele din Admin
             if (typeof loadAdminData === "function") loadAdminData(); 
         } else {
             alert("Eroare la ștergerea relației.");
@@ -2087,5 +1643,56 @@ async function executeFriendDeletion(friendId) {
         console.error("[Social Delete] Eroare ștergere relație:", error);
     }
 }
-// Verificare periodică (opțional) sau apel direct
-// checkLoginStatus();
+async function openRssFeed() {
+    if (!selectedChildId) {
+        alert("Te rog să selectezi un copil din meniul de sus mai întâi!");
+        return;
+    }
+
+    try {
+        const response = await fetch(`api/get_rss_link.php?child_id=${selectedChildId}`);
+        const data = await response.json();
+
+        if (data.success) {
+            window.open(data.rss_url, '_blank');
+        } else {
+            alert("Eroare: Nu am putut genera link-ul securizat.");
+        }
+    } catch (error) {
+        console.error("Eroare la obținerea RSS-ului:", error);
+        alert("Eroare de conexiune la server.");
+    }
+}
+async function editChildName(childId, currentName) {
+    const newName = prompt("Introdu noul nume pentru copil:", currentName);
+        if (!newName || newName.trim() === "" || newName.trim() === currentName) {
+        return; 
+    }
+
+    try {
+        const response = await fetch('api/update_child.php', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+                child_id: childId, 
+                name: newName.trim() 
+            })
+        });
+        
+        const result = await response.json();
+        
+        if (result.success) {
+            if (typeof loadAdminTable === "function") {
+                loadAdminTable(); 
+            }
+            if (typeof populateChildrenSelect === "function") {
+                populateChildrenSelect();
+            }
+        } else {
+            alert("Eroare la modificare: " + result.error);
+        }
+    } catch (error) {
+        console.error("Eroare:", error);
+        alert("Nu m-am putut conecta la server pentru modificare.");
+    }
+}

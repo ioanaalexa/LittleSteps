@@ -32,7 +32,7 @@ if ($method === 'POST') {
     $stmt = $pdo->prepare("INSERT INTO activities (child_id, category, type, details, created_at) VALUES (?, 'sleep', 'Sesiune Somn', ?, ?)");
     $result = $stmt->execute([
         $data['child_id'], 
-        $data['details'] ?? 'Somn înregistrat', // Aici ajunge durata somnului
+        $data['details'] ?? 'Somn înregistrat', //durata somnului
         $ora_actuala
     ]); 
     

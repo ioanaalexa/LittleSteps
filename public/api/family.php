@@ -6,16 +6,16 @@ require_once 'api_helper.php';
 if (!isset($_SESSION['user_id'])) sendResponse(['error' => 'Neautorizat'], 401);
 
 $method = $_SERVER['REQUEST_METHOD'];
-// Preluăm ID-ul familiei din sesiune
+// id ul din sesiune 
 $current_family_id = $_SESSION['family_id'] ?? null;
 
 if (!$current_family_id) {
     sendResponse(['error' => 'Nu s-a detectat ID-ul familiei în sesiune.'], 400);
 }
 
-// LISTARE MEMBRI (FILTRATĂ PE FAMILIE)
+// listare membrii
 if ($method === 'GET') {
-    // MODIFICAT: Selectăm DOAR părinții și copiii care aparțin aceleiași familii
+    ///selectam parintii si copii doar care apartin aceeasi familii 
     $stmtParents = $pdo->prepare("SELECT id, fullname, email, role, gender FROM users WHERE family_id = ?");
     $stmtParents->execute([$current_family_id]);
     $parents = $stmtParents->fetchAll();
@@ -27,13 +27,12 @@ if ($method === 'GET') {
     sendResponse(['parents' => $parents, 'children' => $children]);
 }
 
-// ADĂUGARE MEMBRU (LEGAT DE FAMILIA CURENTĂ)
+// adaugare membrii
 if ($method === 'POST') {
     $data = getJsonInput();
     $type = $data['type']; 
 
     if ($type === 'child') {
-        // MODIFICAT: Inserăm copilul legat direct de family_id-ul din sesiune
         $stmt = $pdo->prepare("INSERT INTO children (name, birthday, gender, family_id) VALUES (?, ?, ?, ?)");
         $stmt->execute([$data['name'], $data['birthday'], $data['gender'], $current_family_id]);
         sendResponse(['message' => 'Copil adăugat!'], 201);

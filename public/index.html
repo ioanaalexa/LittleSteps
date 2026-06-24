@@ -9,10 +9,7 @@
 </head>
 <body>
     <script>
-    /// Daca utilizatorul deschide direct index.html fara sa vina de pe welcome.html
-    // il trimitem automat la pagina de welcome
     if (document.referrer === '' || !document.referrer.includes('welcome.html')) {
-        // Verificam daca nu e deja logat - daca e logat il lasam in aplicatie
         fetch('api/auth.php?action=status')
             .then(r => r.json())
             .then(data => {
@@ -99,9 +96,9 @@
                     </div>
                 </div>
 
-                <div id="activity-list" class="card-container">
-                    <p class="placeholder-text">Se încarcă activitățile...</p>
-                </div>
+                <div id="activity-list" class="card-container" style="display: flex; flex-direction: column; gap: 15px; width: 100%;">
+                            <p class="placeholder-text">Se încarcă activitățile...</p>
+                    </div>
             </section>
 
             <section id="section-daily" class="app-section" style="display:none;">
@@ -295,13 +292,9 @@
 
       <button onclick="exportData('json')">📥 Descarcă JSON</button>
       <button onclick="exportData('csv')" class="btn-alt">📥 Descarcă CSV</button>
-      <a href="api/rss.php"
-         target="_blank"
-         class="btn-rss"
-         style="text-decoration:none; padding:10px 20px; background:#e67e22;
-                color:white; border-radius:8px; display:inline-flex;
-                align-items:center; font-weight:bold;">
-         Flux RSS
+    <a href="#" onclick="openRssFeed(); return false;" class="btn-rss" style="text-decoration:none; padding:10px 20px; background:#e67e22; color:white; border-radius:8px; display:inline-flex; align-items:center; font-weight:bold;">
+    📡 Flux RSS
+        </a>
       </a>
     </div>
 
